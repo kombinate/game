@@ -1,3 +1,177 @@
+
+/* ==========================================================================
+   구형 안드로이드/웹뷰(갤럭시 노트3 등 ES5 브라우저) 호환성 폴리필
+   ========================================================================== */
+(function () {
+  if (!Object.assign) {
+    Object.assign = function (target) {
+      var to = Object(target);
+      for (var i = 1; i < arguments.length; i++) {
+        var next = arguments[i];
+        if (next != null) {
+          for (var key in next) {
+            if (Object.prototype.hasOwnProperty.call(next, key)) {
+              to[key] = next[key];
+            }
+          }
+        }
+      }
+      return to;
+    };
+  }
+  if (!String.prototype.includes) {
+    String.prototype.includes = function (search, start) {
+      return this.indexOf(search, start || 0) !== -1;
+    };
+  }
+  if (!String.prototype.startsWith) {
+    String.prototype.startsWith = function (search, pos) {
+      var p = pos || 0;
+      return this.substr(p, search.length) === search;
+    };
+  }
+  if (!String.prototype.padStart) {
+    String.prototype.padStart = function (targetLen, padStr) {
+      var s = String(this);
+      var p = String(padStr === void 0 ? " " : padStr);
+      while (s.length < targetLen) s = p + s;
+      return s;
+    };
+  }
+  if (!Array.prototype.includes) {
+    Array.prototype.includes = function (search) {
+      return this.indexOf(search) !== -1;
+    };
+  }
+  if (!Array.prototype.find) {
+    Array.prototype.find = function (predicate) {
+      for (var i = 0; i < this.length; i++) {
+        if (predicate(this[i], i, this)) return this[i];
+      }
+      return undefined;
+    };
+  }
+  if (!Array.from) {
+    Array.from = function (iterable) {
+      if (typeof iterable === "string") return iterable.split("");
+      return Array.prototype.slice.call(iterable);
+    };
+  }
+  if (!Math.hypot) {
+    Math.hypot = function (x, y) {
+      return Math.sqrt(x * x + y * y);
+    };
+  }
+  if (typeof window !== "undefined") {
+    if (window.NodeList && !NodeList.prototype.forEach) {
+      NodeList.prototype.forEach = Array.prototype.forEach;
+    }
+    if (!window.performance || !window.performance.now) {
+      window.performance = window.performance || {};
+      window.performance.now = function () { return Date.now(); };
+    }
+    if (!window.requestAnimationFrame) {
+      window.requestAnimationFrame = window.webkitRequestAnimationFrame || function (cb) { return setTimeout(function () { cb(Date.now()); }, 16); };
+      window.cancelAnimationFrame = window.webkitCancelAnimationFrame || function (id) { clearTimeout(id); };
+    }
+    // 구형 Set/Map 폴리필 및 배열 초기화 지원
+    if (typeof window.Set === "undefined" || (function () { try { return new Set([1]).size !== 1; } catch (e) { return true; } })()) {
+      window.Set = function (arr) {
+        this._items = [];
+        if (arr && arr.length) {
+          for (var i = 0; i < arr.length; i++) this.add(arr[i]);
+        }
+      };
+      window.Set.prototype.has = function (v) { return this._items.indexOf(v) !== -1; };
+      window.Set.prototype.add = function (v) { if (!this.has(v)) this._items.push(v); return this; };
+    }
+    if (typeof window.Map === "undefined") {
+      window.Map = function () { this._keys = []; this._vals = []; this.size = 0; };
+      window.Map.prototype.has = function (k) { return this._keys.indexOf(k) !== -1; };
+      window.Map.prototype.get = function (k) { var idx = this._keys.indexOf(k); return idx === -1 ? undefined : this._vals[idx]; };
+      window.Map.prototype.set = function (k, v) {
+        var idx = this._keys.indexOf(k);
+        if (idx === -1) { this._keys.push(k); this._vals.push(v); this.size++; }
+        else { this._vals[idx] = v; }
+        return this;
+      };
+      window.Map.prototype.forEach = function (cb) {
+        for (var i = 0; i < this._keys.length; i++) cb(this._vals[i], this._keys[i]);
+      };
+    }
+    // DOMTokenList.toggle(cls, force) 및 다중 인자 remove 지원
+    if (window.DOMTokenList) {
+      var origRemove = DOMTokenList.prototype.remove;
+      DOMTokenList.prototype.remove = function () {
+        for (var i = 0; i < arguments.length; i++) origRemove.call(this, arguments[i]);
+      };
+      DOMTokenList.prototype.toggle = function (cls, force) {
+        var has = this.contains(cls);
+        var shouldAdd = force !== undefined ? Boolean(force) : !has;
+        if (shouldAdd) { this.add(cls); return true; }
+        origRemove.call(this, cls);
+        return false;
+      };
+    }
+    // PointerEvent 미지원 기기(안드로이드 4.x / 구형 웹뷰)용 Touch/Mouse 매핑 폴리필
+    if (!window.PointerEvent && window.Element) {
+      if (!Element.prototype.setPointerCapture) {
+        Element.prototype.setPointerCapture = function () {};
+      }
+      var origAddEvent = Element.prototype.addEventListener;
+      Element.prototype.addEventListener = function (type, listener, options) {
+        if (type === "pointerdown") {
+          var touched = false;
+          origAddEvent.call(this, "touchstart", function (e) {
+            touched = true;
+            var t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+            if (t) { e.clientX = t.clientX; e.clientY = t.clientY; e.pointerId = 1; }
+            listener.call(this, e);
+          }, false);
+          origAddEvent.call(this, "mousedown", function (e) {
+            if (touched) return;
+            e.pointerId = 1;
+            listener.call(this, e);
+          }, false);
+          return;
+        }
+        if (type === "pointermove") {
+          origAddEvent.call(this, "touchmove", function (e) {
+            var t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+            if (t) { e.clientX = t.clientX; e.clientY = t.clientY; e.pointerId = 1; }
+            listener.call(this, e);
+          }, false);
+          origAddEvent.call(this, "mousemove", function (e) {
+            e.pointerId = 1;
+            listener.call(this, e);
+          }, false);
+          return;
+        }
+        if (type === "pointerup") {
+          var touchEnded = false;
+          origAddEvent.call(this, "touchend", function (e) {
+            touchEnded = true;
+            var t = (e.changedTouches && e.changedTouches[0]) || (e.touches && e.touches[0]);
+            if (t) { e.clientX = t.clientX; e.clientY = t.clientY; e.pointerId = 1; }
+            listener.call(this, e);
+          }, false);
+          origAddEvent.call(this, "mouseup", function (e) {
+            if (touchEnded) { touchEnded = false; return; }
+            e.pointerId = 1;
+            listener.call(this, e);
+          }, false);
+          return;
+        }
+        if (type === "pointercancel") {
+          origAddEvent.call(this, "touchcancel", listener, false);
+          return;
+        }
+        return origAddEvent.call(this, type, listener, false);
+      };
+    }
+  }
+})();
+
 /**
  * ==========================================================================
  * 방글방글 한글 놀이터 - 한글 학습 데이터베이스 (js/words.js)
@@ -16,103 +190,103 @@ window.HG = window.HG || {};
 (function (HG) {
   "use strict";
 
-  const SVG_ILLUSTS = {
-    child: `<svg viewBox="0 0 120 120"><circle cx="60" cy="64" r="38" fill="#FFCCBC"/><path d="M24 58 C24 30 96 30 96 58 C82 44 38 44 24 58 Z" fill="#4E342E"/><circle cx="46" cy="62" r="5" fill="#3E2723"/><circle cx="74" cy="62" r="5" fill="#3E2723"/><circle cx="38" cy="72" r="6" fill="#FF8A80" opacity="0.6"/><circle cx="82" cy="72" r="6" fill="#FF8A80" opacity="0.6"/><path d="M48 76 Q60 88 72 76" stroke="#D84315" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`,
-    cucumber: `<svg viewBox="0 0 120 120"><rect x="38" y="18" width="44" height="84" rx="22" transform="rotate(-18 60 60)" fill="#43A047" stroke="#2E7D32" stroke-width="4"/><circle cx="52" cy="45" r="3" fill="#A5D6A7"/><circle cx="68" cy="62" r="3" fill="#A5D6A7"/><circle cx="58" cy="78" r="3" fill="#A5D6A7"/><path d="M44 20 Q50 10 58 18" stroke="#66BB6A" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`,
-    butterfly: `<svg viewBox="0 0 120 120"><ellipse cx="38" cy="46" rx="24" ry="20" fill="#FF80AB"/><ellipse cx="82" cy="46" rx="24" ry="20" fill="#FF80AB"/><ellipse cx="42" cy="76" rx="18" ry="15" fill="#FF4081"/><ellipse cx="78" cy="76" rx="18" ry="15" fill="#FF4081"/><circle cx="36" cy="44" r="7" fill="#FFF59D"/><circle cx="84" cy="44" r="7" fill="#FFF59D"/><rect x="55" y="32" width="10" height="58" rx="5" fill="#4E342E"/><path d="M56 32 Q46 18 40 22 M64 32 Q74 18 80 22" stroke="#4E342E" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`,
-    hat: `<svg viewBox="0 0 120 120"><ellipse cx="60" cy="80" rx="50" ry="14" fill="#FFA000"/><path d="M26 78 C26 38 94 38 94 78 Z" fill="#FFD54F"/><path d="M27 70 H93" stroke="#FF7043" stroke-width="8"/><circle cx="60" cy="36" r="8" fill="#FF7043"/></svg>`,
-    banana: `<svg viewBox="0 0 120 120"><path d="M28 82 Q65 98 92 36 Q96 24 88 22 Q78 58 26 68 Z" fill="#FFEB3B" stroke="#FBC02D" stroke-width="4" stroke-linejoin="round"/><path d="M36 92 Q76 104 98 44 Q84 72 34 80 Z" fill="#FDD835" stroke="#F9A825" stroke-width="3" stroke-linejoin="round"/><rect x="84" y="16" width="8" height="10" rx="2" fill="#795548"/></svg>`,
-    lion: `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="44" fill="#EF6C00"/><circle cx="34" cy="34" r="12" fill="#FFB74D"/><circle cx="86" cy="34" r="12" fill="#FFB74D"/><circle cx="60" cy="62" r="32" fill="#FFD54F"/><circle cx="48" cy="56" r="4.5" fill="#3E2723"/><circle cx="72" cy="56" r="4.5" fill="#3E2723"/><polygon points="60,62 53,70 67,70" fill="#5D4037"/><path d="M52 76 Q60 82 68 76" stroke="#5D4037" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`,
-    milk: `<svg viewBox="0 0 120 120"><polygon points="36,38 60,20 84,38" fill="#42A5F5" stroke="#1E88E5" stroke-width="4"/><rect x="36" y="38" width="48" height="62" rx="6" fill="#FFFFFF" stroke="#1E88E5" stroke-width="4"/><rect x="36" y="56" width="48" height="24" fill="#64B5F6"/><circle cx="60" cy="68" r="7" fill="#FFF"/></svg>`,
-    tree: `<svg viewBox="0 0 120 120"><rect x="48" y="66" width="24" height="38" rx="4" fill="#8D6E63"/><circle cx="60" cy="44" r="28" fill="#66BB6A"/><circle cx="40" cy="56" r="22" fill="#4CAF50"/><circle cx="80" cy="56" r="22" fill="#4CAF50"/><circle cx="52" cy="38" r="5" fill="#EF5350"/><circle cx="72" cy="50" r="5" fill="#EF5350"/></svg>`,
-    grape: `<svg viewBox="0 0 120 120"><path d="M58 16 Q66 26 60 34" stroke="#6D4C41" stroke-width="5" fill="none"/><path d="M62 24 Q80 18 76 32 Q66 34 62 24 Z" fill="#66BB6A"/><circle cx="46" cy="46" r="13" fill="#8E24AA"/><circle cx="66" cy="46" r="13" fill="#9C27B0"/><circle cx="78" cy="60" r="13" fill="#7B1FA2"/><circle cx="38" cy="64" r="13" fill="#9C27B0"/><circle cx="58" cy="64" r="13" fill="#AB47BC"/><circle cx="48" cy="80" r="13" fill="#7B1FA2"/><circle cx="68" cy="80" r="13" fill="#8E24AA"/><circle cx="58" cy="95" r="13" fill="#6A1B9A"/></svg>`,
-    hippo: `<svg viewBox="0 0 120 120"><circle cx="36" cy="32" r="10" fill="#78909C"/><circle cx="84" cy="32" r="10" fill="#78909C"/><circle cx="60" cy="54" r="28" fill="#90A4AE"/><ellipse cx="60" cy="74" rx="36" ry="24" fill="#B0BEC5"/><circle cx="48" cy="46" r="4" fill="#263238"/><circle cx="72" cy="46" r="4" fill="#263238"/><ellipse cx="48" cy="68" rx="4" ry="6" fill="#546E7A"/><ellipse cx="72" cy="68" rx="4" ry="6" fill="#546E7A"/></svg>`,
-    train: `<svg viewBox="0 0 120 120"><rect x="20" y="44" width="80" height="42" rx="10" fill="#E53935"/><rect x="64" y="26" width="32" height="24" rx="6" fill="#42A5F5"/><rect x="28" y="28" width="12" height="18" rx="3" fill="#546E7A"/><circle cx="40" cy="90" r="12" fill="#37474F" stroke="#FFD54F" stroke-width="4"/><circle cx="80" cy="90" r="12" fill="#37474F" stroke="#FFD54F" stroke-width="4"/></svg>`,
-    rabbit: `<svg viewBox="0 0 120 120"><ellipse cx="44" cy="32" rx="10" ry="24" fill="#FFF" stroke="#F8BBD0" stroke-width="4"/><ellipse cx="76" cy="32" rx="10" ry="24" fill="#FFF" stroke="#F8BBD0" stroke-width="4"/><ellipse cx="44" cy="34" rx="5" ry="15" fill="#F48FB1"/><ellipse cx="76" cy="34" rx="5" ry="15" fill="#F48FB1"/><circle cx="60" cy="70" r="32" fill="#FFFFFF" stroke="#F8BBD0" stroke-width="4"/><circle cx="48" cy="64" r="4.5" fill="#D81B60"/><circle cx="72" cy="64" r="4.5" fill="#D81B60"/><ellipse cx="60" cy="73" rx="5" ry="4" fill="#F06292"/></svg>`,
-    moon: `<svg viewBox="0 0 120 120"><path d="M74 22 C44 26 28 58 44 84 C56 102 82 104 96 92 C72 94 56 76 60 52 C62 38 68 28 74 22 Z" fill="#FFD54F" stroke="#FFA000" stroke-width="4" stroke-linejoin="round"/><circle cx="32" cy="36" r="4" fill="#FFF176"/><circle cx="88" cy="38" r="5" fill="#FFF176"/></svg>`,
-    bear: `<svg viewBox="0 0 120 120"><circle cx="34" cy="36" r="14" fill="#8D6E63"/><circle cx="86" cy="36" r="14" fill="#8D6E63"/><circle cx="60" cy="64" r="36" fill="#A1887F"/><ellipse cx="60" cy="72" rx="15" ry="12" fill="#EFEBE9"/><circle cx="46" cy="56" r="4.5" fill="#3E2723"/><circle cx="74" cy="56" r="4.5" fill="#3E2723"/><ellipse cx="60" cy="68" rx="6" ry="4" fill="#3E2723"/></svg>`,
-    star: `<svg viewBox="0 0 120 120"><polygon points="60,14 73,44 106,47 81,69 88,102 60,84 32,102 39,69 14,47 47,44" fill="#FFEE58" stroke="#FBC02D" stroke-width="5" stroke-linejoin="round"/><circle cx="50" cy="58" r="4" fill="#3E2723"/><circle cx="70" cy="58" r="4" fill="#3E2723"/><path d="M53 68 Q60 74 67 68" stroke="#3E2723" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>`,
-    water: `<svg viewBox="0 0 120 120"><path d="M60 18 C60 18 26 60 26 80 C26 98 41 106 60 106 C79 106 94 98 94 80 C94 60 60 18 60 18 Z" fill="#29B6F6" stroke="#0288D1" stroke-width="4"/><path d="M42 74 Q42 88 54 92" stroke="#E1F5FE" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`,
-    wave: `<svg viewBox="0 0 120 120"><path d="M12 78 C28 42 58 42 72 66 C56 58 44 68 48 82 H108 C108 94 88 100 60 100 C30 100 12 92 12 78 Z" fill="#29B6F6" stroke="#0288D1" stroke-width="4" stroke-linejoin="round"/><circle cx="78" cy="48" r="5" fill="#81D4FA"/><circle cx="92" cy="58" r="4" fill="#81D4FA"/></svg>`,
-    rice: `<svg viewBox="0 0 120 120"><path d="M26 62 C26 34 94 34 94 62 Z" fill="#FFFFFF" stroke="#CFD8DC" stroke-width="4"/><path d="M22 60 H98 L86 96 C84 100 78 102 60 102 C42 102 36 100 34 96 Z" fill="#FF7043" stroke="#D84315" stroke-width="4"/><path d="M36 76 H84" stroke="#FFE082" stroke-width="5" stroke-linecap="round"/></svg>`,
-    tofu: `<svg viewBox="0 0 120 120"><ellipse cx="60" cy="82" rx="46" ry="16" fill="#FFCC80" stroke="#FB8C00" stroke-width="4"/><rect x="30" y="38" width="60" height="40" rx="8" fill="#FFFDF7" stroke="#CFD8DC" stroke-width="4"/><line x1="60" y1="38" x2="60" y2="78" stroke="#ECEFF1" stroke-width="3"/><line x1="30" y1="58" x2="90" y2="58" stroke="#ECEFF1" stroke-width="3"/><ellipse cx="60" cy="46" rx="10" ry="5" fill="#66BB6A"/></svg>`,
-    stew: `<svg viewBox="0 0 120 120"><path d="M18 56 H102 L92 94 C90 100 30 100 28 94 Z" fill="#37474F"/><ellipse cx="60" cy="56" rx="42" ry="14" fill="#FF7043" stroke="#37474F" stroke-width="4"/><circle cx="48" cy="56" r="6" fill="#FFF59D"/><circle cx="70" cy="54" r="6" fill="#66BB6A"/><path d="M46 34 Q42 24 48 18 M74 34 Q70 24 76 18" stroke="#FF8A65" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`,
-    snow: `<svg viewBox="0 0 120 120"><circle cx="60" cy="78" r="26" fill="#FFFFFF" stroke="#90CAF9" stroke-width="4"/><circle cx="60" cy="42" r="18" fill="#FFFFFF" stroke="#90CAF9" stroke-width="4"/><circle cx="54" cy="39" r="3" fill="#37474F"/><circle cx="66" cy="39" r="3" fill="#37474F"/><polygon points="60,43 74,46 60,49" fill="#FF7043"/><path d="M44 56 Q60 64 76 56" stroke="#E53935" stroke-width="7" fill="none" stroke-linecap="round"/></svg>`,
-    ball: `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="42" fill="#FFCA28" stroke="#F57F17" stroke-width="4"/><path d="M22 46 Q60 70 98 46" stroke="#EF5350" stroke-width="8" fill="none"/><path d="M24 76 Q60 54 96 76" stroke="#29B6F6" stroke-width="8" fill="none"/></svg>`,
-    earth: `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="42" fill="#29B6F6" stroke="#0288D1" stroke-width="4"/><path d="M32 36 C48 34 54 48 44 62 C36 72 44 86 58 88 C40 94 24 78 24 58 C24 48 28 40 32 36 Z" fill="#66BB6A"/><path d="M72 30 C88 36 96 52 90 70 C82 76 70 68 72 54 C74 44 66 36 72 30 Z" fill="#66BB6A"/></svg>`,
-    baseball: `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="42" fill="#FFFFFF" stroke="#CFD8DC" stroke-width="4"/><path d="M34 28 Q52 60 34 92" stroke="#E53935" stroke-width="4" stroke-dasharray="6 4" fill="none"/><path d="M86 28 Q68 60 86 92" stroke="#E53935" stroke-width="4" stroke-dasharray="6 4" fill="none"/></svg>`,
-    house: `<svg viewBox="0 0 120 120"><polygon points="16,58 60,20 104,58" fill="#EF5350" stroke="#C62828" stroke-width="4" stroke-linejoin="round"/><rect x="28" y="58" width="64" height="44" rx="4" fill="#FFF8E1" stroke="#FFB74D" stroke-width="4"/><rect x="50" y="72" width="20" height="30" rx="3" fill="#8D6E63"/></svg>`,
-    flower: `<svg viewBox="0 0 120 120"><circle cx="60" cy="34" r="16" fill="#FF80AB"/><circle cx="84" cy="52" r="16" fill="#FF80AB"/><circle cx="74" cy="80" r="16" fill="#FF80AB"/><circle cx="46" cy="80" r="16" fill="#FF80AB"/><circle cx="36" cy="52" r="16" fill="#FF80AB"/><circle cx="60" cy="58" r="15" fill="#FFEE58" stroke="#FBC02D" stroke-width="3"/></svg>`,
-    cloud: `<svg viewBox="0 0 120 120"><path d="M32 82 H88 C100 82 106 72 104 62 C102 52 92 48 86 48 C82 32 64 26 50 34 C38 28 24 38 24 52 C14 54 12 66 18 74 C22 80 26 82 32 82 Z" fill="#81D4FA" stroke="#29B6F6" stroke-width="4" stroke-linejoin="round"/></svg>`,
-    apple: `<svg viewBox="0 0 120 120"><path d="M60 34 C42 26 22 42 24 66 C26 90 44 104 60 98 C76 104 94 90 96 66 C98 42 78 26 60 34 Z" fill="#EF5350" stroke="#C62828" stroke-width="4"/><path d="M60 34 Q62 18 70 16" stroke="#6D4C41" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M64 24 Q82 16 80 30 Q70 34 64 24 Z" fill="#66BB6A"/></svg>`,
-    watermelon: `<svg viewBox="0 0 120 120"><path d="M16 44 A44 44 0 0 0 104 44 Z" fill="#43A047"/><path d="M24 44 A36 36 0 0 0 96 44 Z" fill="#EF5350"/><circle cx="46" cy="58" r="3.5" fill="#263238"/><circle cx="60" cy="66" r="3.5" fill="#263238"/><circle cx="74" cy="58" r="3.5" fill="#263238"/></svg>`,
-    bag: `<svg viewBox="0 0 120 120"><path d="M44 36 C44 20 76 20 76 36" stroke="#FB8C00" stroke-width="6" fill="none"/><rect x="26" y="36" width="68" height="64" rx="18" fill="#FFB74D" stroke="#F57C00" stroke-width="4"/><rect x="38" y="62" width="44" height="26" rx="8" fill="#FFF3E0"/></svg>`,
-    drawer: `<svg viewBox="0 0 120 120"><rect x="22" y="22" width="76" height="76" rx="10" fill="#8D6E63" stroke="#5D4037" stroke-width="4"/><rect x="30" y="30" width="60" height="26" rx="5" fill="#FFE0B2" stroke="#5D4037" stroke-width="3"/><rect x="30" y="64" width="60" height="26" rx="5" fill="#FFE0B2" stroke="#5D4037" stroke-width="3"/><circle cx="60" cy="43" r="5" fill="#5D4037"/><circle cx="60" cy="77" r="5" fill="#5D4037"/></svg>`,
-    duck: `<svg viewBox="0 0 120 120"><circle cx="52" cy="44" r="20" fill="#FFEE58"/><ellipse cx="64" cy="78" rx="32" ry="22" fill="#FDD835"/><polygon points="32,42 16,47 32,52" fill="#FF7043"/><circle cx="46" cy="40" r="4" fill="#3E2723"/></svg>`,
-    ostrich: `<svg viewBox="0 0 120 120"><circle cx="42" cy="24" r="12" fill="#FFCCBC" stroke="#8D6E63" stroke-width="3"/><polygon points="30,24 18,27 30,30" fill="#FFA000"/><rect x="38" y="34" width="8" height="32" rx="4" fill="#FFCCBC"/><ellipse cx="64" cy="68" rx="28" ry="18" fill="#5D4037"/><line x1="56" y1="84" x2="52" y2="108" stroke="#FFA000" stroke-width="5" stroke-linecap="round"/><line x1="72" y1="84" x2="76" y2="108" stroke="#FFA000" stroke-width="5" stroke-linecap="round"/><circle cx="39" cy="22" r="3" fill="#263238"/></svg>`,
-    bus: `<svg viewBox="0 0 120 120"><rect x="16" y="34" width="88" height="52" rx="12" fill="#FFCA28" stroke="#FFA000" stroke-width="4"/><rect x="26" y="44" width="20" height="18" rx="4" fill="#E1F5FE"/><rect x="52" y="44" width="20" height="18" rx="4" fill="#E1F5FE"/><rect x="78" y="44" width="18" height="18" rx="4" fill="#E1F5FE"/><circle cx="38" cy="88" r="11" fill="#37474F"/><circle cx="82" cy="88" r="11" fill="#37474F"/></svg>`,
-    car: `<svg viewBox="0 0 120 120"><path d="M28 62 L40 38 H80 L92 62 Z" fill="#4FC3F7"/><rect x="16" y="58" width="88" height="28" rx="12" fill="#039BE5"/><circle cx="38" cy="88" r="12" fill="#37474F" stroke="#ECEFF1" stroke-width="4"/><circle cx="82" cy="88" r="12" fill="#37474F" stroke="#ECEFF1" stroke-width="4"/></svg>`,
-    piano: `<svg viewBox="0 0 120 120"><rect x="18" y="28" width="84" height="64" rx="10" fill="#ECEFF1" stroke="#455A64" stroke-width="4"/><line x1="39" y1="28" x2="39" y2="92" stroke="#455A64" stroke-width="3"/><line x1="60" y1="28" x2="60" y2="92" stroke="#455A64" stroke-width="3"/><line x1="81" y1="28" x2="81" y2="92" stroke="#455A64" stroke-width="3"/><rect x="33" y="28" width="12" height="36" fill="#263238"/><rect x="54" y="28" width="12" height="36" fill="#263238"/><rect x="75" y="28" width="12" height="36" fill="#263238"/></svg>`,
-    radio: `<svg viewBox="0 0 120 120"><line x1="34" y1="40" x2="78" y2="16" stroke="#546E7A" stroke-width="5" stroke-linecap="round"/><circle cx="78" cy="16" r="5" fill="#FF5252"/><rect x="20" y="40" width="80" height="54" rx="12" fill="#29B6F6" stroke="#0288D1" stroke-width="4"/><circle cx="46" cy="67" r="16" fill="#FFF9C4" stroke="#0288D1" stroke-width="3"/><circle cx="82" cy="58" r="6" fill="#FFD54F"/><circle cx="82" cy="76" r="6" fill="#FF7043"/></svg>`,
-    camera: `<svg viewBox="0 0 120 120"><rect x="38" y="26" width="26" height="12" rx="4" fill="#546E7A"/><rect x="18" y="36" width="84" height="58" rx="14" fill="#FF7043" stroke="#D84315" stroke-width="4"/><circle cx="60" cy="65" r="20" fill="#E1F5FE" stroke="#37474F" stroke-width="5"/><circle cx="86" cy="48" r="5" fill="#FFEE58"/></svg>`,
-    gem: `<svg viewBox="0 0 120 120"><polygon points="36,26 84,26 104,50 60,98 16,50" fill="#4FC3F7" stroke="#0288D1" stroke-width="4" stroke-linejoin="round"/><polyline points="16,50 104,50" stroke="#0288D1" stroke-width="3"/><polyline points="36,26 48,50 60,98 72,50 84,26" stroke="#B3E5FC" stroke-width="3" fill="none"/></svg>`,
-    fox: `<svg viewBox="0 0 120 120"><polygon points="24,22 48,46 28,62" fill="#FF7043"/><polygon points="96,22 72,46 92,62" fill="#FF7043"/><polygon points="22,52 98,52 60,98" fill="#FF8A65" stroke="#E64A19" stroke-width="4" stroke-linejoin="round"/><polygon points="36,64 60,96 48,64" fill="#FFF3E0"/><polygon points="84,64 60,96 72,64" fill="#FFF3E0"/><circle cx="46" cy="60" r="4.5" fill="#3E2723"/><circle cx="74" cy="60" r="4.5" fill="#3E2723"/><circle cx="60" cy="94" r="6" fill="#3E2723"/></svg>`,
-    raccoon: `<svg viewBox="0 0 120 120"><circle cx="34" cy="36" r="13" fill="#6D4C41"/><circle cx="86" cy="36" r="13" fill="#6D4C41"/><circle cx="60" cy="64" r="36" fill="#A1887F" stroke="#5D4037" stroke-width="4"/><ellipse cx="44" cy="58" rx="14" ry="10" fill="#4E342E"/><ellipse cx="76" cy="58" rx="14" ry="10" fill="#4E342E"/><circle cx="44" cy="58" r="4" fill="#FFFFFF"/><circle cx="76" cy="58" r="4" fill="#FFFFFF"/><ellipse cx="60" cy="74" rx="14" ry="10" fill="#EFEBE9"/><circle cx="60" cy="70" r="5" fill="#3E2723"/></svg>`,
-    squirrel: `<svg viewBox="0 0 120 120"><path d="M78 86 C108 86 112 38 86 38 C72 38 72 62 82 68" fill="#D78B48" stroke="#8D6E63" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="56" r="24" fill="#F4A460" stroke="#8D6E63" stroke-width="4"/><ellipse cx="52" cy="84" rx="20" ry="16" fill="#F4A460" stroke="#8D6E63" stroke-width="4"/><circle cx="42" cy="52" r="4" fill="#3E2723"/></svg>`,
-    whale: `<svg viewBox="0 0 120 120"><path d="M18 74 C18 42 74 38 88 64 C96 64 106 54 108 46 C108 62 102 76 88 78 Z" fill="#29B6F6" stroke="#0288D1" stroke-width="4" stroke-linejoin="round"/><path d="M52 38 Q46 20 34 22 M52 38 Q58 20 70 22" stroke="#81D4FA" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="38" cy="60" r="4" fill="#263238"/></svg>`,
-    frog: `<svg viewBox="0 0 120 120"><circle cx="40" cy="40" r="14" fill="#66BB6A"/><circle cx="80" cy="40" r="14" fill="#66BB6A"/><circle cx="40" cy="40" r="6" fill="#263238"/><circle cx="80" cy="40" r="6" fill="#263238"/><ellipse cx="60" cy="68" rx="38" ry="26" fill="#66BB6A" stroke="#388E3C" stroke-width="4"/><path d="M40 72 Q60 86 80 72" stroke="#2E7D32" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="34" cy="66" r="6" fill="#FF8A80" opacity="0.7"/><circle cx="86" cy="66" r="6" fill="#FF8A80" opacity="0.7"/></svg>`,
-    pig: `<svg viewBox="0 0 120 120"><polygon points="28,28 46,34 32,50" fill="#F48FB1"/><polygon points="92,28 74,34 88,50" fill="#F48FB1"/><circle cx="60" cy="64" r="36" fill="#F8BBD0" stroke="#F06292" stroke-width="4"/><ellipse cx="60" cy="68" rx="15" ry="11" fill="#F06292"/><circle cx="55" cy="68" r="3" fill="#880E4F"/><circle cx="65" cy="68" r="3" fill="#880E4F"/><circle cx="44" cy="52" r="4.5" fill="#3E2723"/><circle cx="76" cy="52" r="4.5" fill="#3E2723"/></svg>`,
-    cat: `<svg viewBox="0 0 120 120"><polygon points="26,26 48,38 28,56" fill="#FFB74D"/><polygon points="94,26 72,38 92,56" fill="#FFB74D"/><circle cx="60" cy="66" r="34" fill="#FFE082" stroke="#FFA000" stroke-width="4"/><circle cx="46" cy="58" r="4.5" fill="#3E2723"/><circle cx="74" cy="58" r="4.5" fill="#3E2723"/><polygon points="60,64 55,70 65,70" fill="#EC407A"/><line x1="20" y1="64" x2="38" y2="66" stroke="#8D6E63" stroke-width="3"/><line x1="20" y1="72" x2="38" y2="71" stroke="#8D6E63" stroke-width="3"/><line x1="82" y1="66" x2="100" y2="64" stroke="#8D6E63" stroke-width="3"/><line x1="82" y1="71" x2="100" y2="72" stroke="#8D6E63" stroke-width="3"/></svg>`,
-    dog: `<svg viewBox="0 0 120 120"><ellipse cx="26" cy="56" rx="12" ry="22" transform="rotate(15 26 56)" fill="#8D6E63"/><ellipse cx="94" cy="56" rx="12" ry="22" transform="rotate(-15 94 56)" fill="#8D6E63"/><circle cx="60" cy="62" r="34" fill="#FFE0B2" stroke="#8D6E63" stroke-width="4"/><circle cx="46" cy="54" r="4.5" fill="#3E2723"/><circle cx="74" cy="54" r="4.5" fill="#3E2723"/><ellipse cx="60" cy="64" rx="7" ry="5" fill="#3E2723"/><path d="M56 72 Q60 82 64 72" fill="#EF5350"/></svg>`,
-    tiger: `<svg viewBox="0 0 120 120"><circle cx="34" cy="34" r="12" fill="#FF9800"/><circle cx="86" cy="34" r="12" fill="#FF9800"/><circle cx="60" cy="64" r="36" fill="#FFB74D" stroke="#F57C00" stroke-width="4"/><path d="M52 30 H68 M56 38 H64 M26 58 H36 M84 58 H94" stroke="#3E2723" stroke-width="4" stroke-linecap="round"/><circle cx="46" cy="56" r="4.5" fill="#3E2723"/><circle cx="74" cy="56" r="4.5" fill="#3E2723"/><ellipse cx="60" cy="68" rx="12" ry="9" fill="#FFF8E1"/></svg>`,
-    penguin: `<svg viewBox="0 0 120 120"><ellipse cx="60" cy="64" rx="34" ry="40" fill="#37474F"/><ellipse cx="60" cy="70" rx="22" ry="28" fill="#FFFFFF"/><circle cx="48" cy="48" r="4.5" fill="#263238"/><circle cx="72" cy="48" r="4.5" fill="#263238"/><polygon points="60,52 52,60 68,60" fill="#FFA000"/><ellipse cx="44" cy="102" rx="10" ry="5" fill="#FFA000"/><ellipse cx="76" cy="102" rx="10" ry="5" fill="#FFA000"/></svg>`,
-    turtle: `<svg viewBox="0 0 120 120"><circle cx="94" cy="62" r="14" fill="#81C784"/><path d="M22 72 C22 36 82 36 82 72 Z" fill="#388E3C" stroke="#1B5E20" stroke-width="4"/><rect x="30" y="72" width="12" height="16" rx="5" fill="#81C784"/><rect x="62" y="72" width="12" height="16" rx="5" fill="#81C784"/><circle cx="98" cy="58" r="3" fill="#263238"/></svg>`,
-    strawberry: `<svg viewBox="0 0 120 120"><path d="M60 98 C34 86 26 52 38 36 C48 26 72 26 82 36 C94 52 86 86 60 98 Z" fill="#E53935" stroke="#C62828" stroke-width="4"/><polygon points="60,20 44,36 60,32 76,36" fill="#43A047" stroke="#2E7D32" stroke-width="3"/><circle cx="48" cy="52" r="2.5" fill="#FFF59D"/><circle cx="72" cy="52" r="2.5" fill="#FFF59D"/><circle cx="60" cy="66" r="2.5" fill="#FFF59D"/><circle cx="50" cy="76" r="2.5" fill="#FFF59D"/><circle cx="70" cy="76" r="2.5" fill="#FFF59D"/></svg>`,
-    carrot: `<svg viewBox="0 0 120 120"><path d="M60 100 L38 40 C38 30 82 30 82 40 Z" fill="#FF7043" stroke="#D84315" stroke-width="4" stroke-linejoin="round"/><path d="M60 32 Q50 14 42 20 M60 32 Q60 12 60 14 M60 32 Q70 14 78 20" stroke="#43A047" stroke-width="5" fill="none" stroke-linecap="round"/><line x1="48" y1="54" x2="64" y2="54" stroke="#D84315" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="70" x2="68" y2="70" stroke="#D84315" stroke-width="3" stroke-linecap="round"/></svg>`,
-    bread: `<svg viewBox="0 0 120 120"><path d="M26 52 C20 34 40 24 60 24 C80 24 100 34 94 52 L90 92 H30 Z" fill="#FFB74D" stroke="#E65100" stroke-width="4" stroke-linejoin="round"/><rect x="38" y="42" width="44" height="40" rx="8" fill="#FFF3E0"/></svg>`,
-    pizza: `<svg viewBox="0 0 120 120"><polygon points="60,20 22,94 98,94" fill="#FFD54F" stroke="#F57C00" stroke-width="5" stroke-linejoin="round"/><path d="M20 92 Q60 104 100 92" stroke="#D84315" stroke-width="9" fill="none" stroke-linecap="round"/><circle cx="60" cy="56" r="7" fill="#E53935"/><circle cx="48" cy="76" r="7" fill="#E53935"/><circle cx="72" cy="76" r="7" fill="#E53935"/></svg>`,
-    cheese: `<svg viewBox="0 0 120 120"><polygon points="20,56 76,26 100,56" fill="#FFF176" stroke="#FBC02D" stroke-width="4" stroke-linejoin="round"/><rect x="20" y="56" width="80" height="36" rx="4" fill="#FFD54F" stroke="#FBC02D" stroke-width="4"/><circle cx="42" cy="72" r="7" fill="#F57F17"/><circle cx="74" cy="76" r="5" fill="#F57F17"/><circle cx="62" cy="64" r="4" fill="#F57F17"/></svg>`,
-    juice: `<svg viewBox="0 0 120 120"><path d="M68 18 L58 40" stroke="#EF5350" stroke-width="6" stroke-linecap="round"/><path d="M34 40 H86 L80 98 H40 Z" fill="#FFF3E0" stroke="#FFB74D" stroke-width="4" stroke-linejoin="round"/><path d="M37 56 H83 L79 94 H41 Z" fill="#FFA726"/></svg>`,
-    airplane: `<svg viewBox="0 0 120 120"><path d="M18 64 L102 36 L86 84 L58 72 L42 88 L42 68 Z" fill="#4FC3F7" stroke="#0288D1" stroke-width="4" stroke-linejoin="round"/></svg>`,
-    ship: `<svg viewBox="0 0 120 120"><polygon points="60,20 60,64 94,64" fill="#FF8A65"/><polygon points="54,28 54,64 26,64" fill="#FFD54F"/><polygon points="18,68 102,68 86,94 34,94" fill="#5D4037"/><path d="M14 96 Q36 88 60 96 T106 96" stroke="#29B6F6" stroke-width="6" fill="none" stroke-linecap="round"/></svg>`,
-    umbrella: `<svg viewBox="0 0 120 120"><path d="M16 62 C16 26 104 26 104 62 Z" fill="#EC407A" stroke="#C2185B" stroke-width="4"/><path d="M60 62 V92 C60 100 48 100 48 92" stroke="#5D4037" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`,
-    clock: `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="40" fill="#FFF9C4" stroke="#29B6F6" stroke-width="6"/><line x1="60" y1="60" x2="60" y2="36" stroke="#37474F" stroke-width="5" stroke-linecap="round"/><line x1="60" y1="60" x2="78" y2="60" stroke="#E53935" stroke-width="5" stroke-linecap="round"/><circle cx="60" cy="60" r="4" fill="#37474F"/></svg>`,
-    rainbow: `<svg viewBox="0 0 120 120"><path d="M18 84 A42 42 0 0 1 102 84" stroke="#EF5350" stroke-width="8" fill="none"/><path d="M26 84 A34 34 0 0 1 94 84" stroke="#FFCA28" stroke-width="8" fill="none"/><path d="M34 84 A26 26 0 0 1 86 84" stroke="#66BB6A" stroke-width="8" fill="none"/><path d="M42 84 A18 18 0 0 1 78 84" stroke="#29B6F6" stroke-width="8" fill="none"/></svg>`,
-    book: `<svg viewBox="0 0 120 120"><path d="M18 32 Q40 26 60 34 V92 Q40 84 18 90 Z" fill="#FFF8E1" stroke="#FFA000" stroke-width="4"/><path d="M102 32 Q80 26 60 34 V92 Q80 84 102 90 Z" fill="#FFF8E1" stroke="#FFA000" stroke-width="4"/></svg>`,
-    pencil: `<svg viewBox="0 0 120 120"><polygon points="24,96 36,68 52,84" fill="#FFE0B2" stroke="#5D4037" stroke-width="3"/><rect x="44" y="32" width="44" height="24" transform="rotate(-45 66 44)" fill="#FFD54F" stroke="#F57F17" stroke-width="4"/><polygon points="24,96 29,84 36,91" fill="#3E2723"/></svg>`,
-    glasses: `<svg viewBox="0 0 120 120"><circle cx="36" cy="64" r="18" fill="#E1F5FE" stroke="#37474F" stroke-width="5"/><circle cx="84" cy="64" r="18" fill="#E1F5FE" stroke="#37474F" stroke-width="5"/><line x1="54" y1="64" x2="66" y2="64" stroke="#37474F" stroke-width="5"/></svg>`,
-    shoes: `<svg viewBox="0 0 120 120"><path d="M22 52 H56 L72 68 H96 C102 68 102 88 94 88 H22 Z" fill="#EF5350" stroke="#C62828" stroke-width="4" stroke-linejoin="round"/><rect x="20" y="84" width="80" height="8" rx="4" fill="#FFFFFF"/></svg>`,
-    gift: `<svg viewBox="0 0 120 120"><rect x="26" y="46" width="68" height="52" rx="6" fill="#FF7043" stroke="#D84315" stroke-width="4"/><rect x="22" y="34" width="76" height="16" rx="4" fill="#FF8A65" stroke="#D84315" stroke-width="4"/><rect x="54" y="34" width="12" height="64" fill="#FFD54F"/><path d="M60 34 C42 16 32 34 60 34 C88 34 78 16 60 34 Z" fill="#FFD54F" stroke="#FFA000" stroke-width="3"/></svg>`,
-    robot: `<svg viewBox="0 0 120 120"><line x1="60" y1="16" x2="60" y2="32" stroke="#546E7A" stroke-width="5"/><circle cx="60" cy="14" r="6" fill="#FF5252"/><rect x="30" y="32" width="60" height="48" rx="10" fill="#90A4AE" stroke="#455A64" stroke-width="4"/><circle cx="46" cy="52" r="7" fill="#FFF59D"/><circle cx="74" cy="52" r="7" fill="#FFF59D"/><rect x="42" y="66" width="36" height="6" rx="3" fill="#37474F"/></svg>`,
-    mountain: `<svg viewBox="0 0 120 120"><polygon points="12,94 52,28 92,94" fill="#66BB6A" stroke="#2E7D32" stroke-width="4" stroke-linejoin="round"/><polygon points="48,94 80,42 110,94" fill="#81C784" stroke="#388E3C" stroke-width="4" stroke-linejoin="round"/></svg>`,
-    bee: `<svg viewBox="0 0 120 120"><ellipse cx="52" cy="36" rx="12" ry="18" fill="#E1F5FE" stroke="#81D4FA" stroke-width="3"/><ellipse cx="68" cy="36" rx="12" ry="18" fill="#E1F5FE" stroke="#81D4FA" stroke-width="3"/><ellipse cx="60" cy="64" rx="32" ry="22" fill="#FFD54F" stroke="#3E2723" stroke-width="4"/><line x1="50" y1="44" x2="50" y2="84" stroke="#3E2723" stroke-width="6"/><line x1="68" y1="44" x2="68" y2="84" stroke="#3E2723" stroke-width="6"/><circle cx="38" cy="60" r="4" fill="#3E2723"/></svg>`,
-    dinosaur: `<svg viewBox="0 0 120 120"><path d="M30 88 V44 C30 26 62 26 62 44 V60 H88 C96 60 96 88 84 88 Z" fill="#66BB6A" stroke="#2E7D32" stroke-width="4" stroke-linejoin="round"/><circle cx="44" cy="40" r="4" fill="#263238"/></svg>`,
-    giraffe: `<svg viewBox="0 0 120 120"><rect x="48" y="36" width="18" height="62" rx="8" fill="#FFD54F" stroke="#F57F17" stroke-width="3"/><ellipse cx="60" cy="34" rx="18" ry="12" fill="#FFD54F" stroke="#F57F17" stroke-width="3"/><circle cx="56" cy="56" r="4" fill="#8D6E63"/><circle cx="54" cy="76" r="5" fill="#8D6E63"/><circle cx="64" cy="32" r="3" fill="#3E2723"/></svg>`,
-    mushroom: `<svg viewBox="0 0 120 120"><rect x="46" y="58" width="28" height="38" rx="10" fill="#FFF8E1" stroke="#D7CCC8" stroke-width="4"/><path d="M20 62 C20 22 100 22 100 62 Z" fill="#EF5350" stroke="#C62828" stroke-width="4"/><circle cx="44" cy="44" r="7" fill="#FFFFFF"/><circle cx="74" cy="40" r="6" fill="#FFFFFF"/><circle cx="60" cy="52" r="5" fill="#FFFFFF"/></svg>`,
-    corn: `<svg viewBox="0 0 120 120"><ellipse cx="60" cy="56" rx="20" ry="34" fill="#FFD54F" stroke="#FBC02D" stroke-width="4"/><path d="M40 64 Q26 84 56 94 Z" fill="#66BB6A" stroke="#2E7D32" stroke-width="3"/><path d="M80 64 Q94 84 64 94 Z" fill="#66BB6A" stroke="#2E7D32" stroke-width="3"/></svg>`,
-    elephant: `<svg viewBox="0 0 120 120"><ellipse cx="28" cy="58" rx="18" ry="26" fill="#90A4AE" stroke="#607D8B" stroke-width="4"/><ellipse cx="92" cy="58" rx="18" ry="26" fill="#90A4AE" stroke="#607D8B" stroke-width="4"/><circle cx="60" cy="56" r="30" fill="#B0BEC5" stroke="#607D8B" stroke-width="4"/><path d="M54 62 V88 C54 96 68 96 68 86" stroke="#607D8B" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M54 62 V88 C54 96 68 96 68 86" stroke="#B0BEC5" stroke-width="7" fill="none" stroke-linecap="round"/><circle cx="46" cy="50" r="4" fill="#263238"/><circle cx="74" cy="50" r="4" fill="#263238"/></svg>`,
-    caterpillar: `<svg viewBox="0 0 120 120"><circle cx="88" cy="72" r="14" fill="#81C784" stroke="#388E3C" stroke-width="3"/><circle cx="68" cy="68" r="15" fill="#66BB6A" stroke="#388E3C" stroke-width="3"/><circle cx="48" cy="70" r="16" fill="#81C784" stroke="#388E3C" stroke-width="3"/><circle cx="30" cy="56" r="18" fill="#66BB6A" stroke="#388E3C" stroke-width="3"/><circle cx="24" cy="52" r="3.5" fill="#263238"/><circle cx="36" cy="52" r="3.5" fill="#263238"/><path d="M24 38 Q18 26 14 30 M34 38 Q40 26 44 30" stroke="#388E3C" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`,
-    waffle: `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="40" fill="#FFB74D" stroke="#E65100" stroke-width="5"/><line x1="36" y1="28" x2="36" y2="92" stroke="#E65100" stroke-width="4"/><line x1="60" y1="20" x2="60" y2="100" stroke="#E65100" stroke-width="4"/><line x1="84" y1="28" x2="84" y2="92" stroke="#E65100" stroke-width="4"/><line x1="28" y1="36" x2="92" y2="36" stroke="#E65100" stroke-width="4"/><line x1="20" y1="60" x2="100" y2="60" stroke="#E65100" stroke-width="4"/><line x1="28" y1="84" x2="92" y2="84" stroke="#E65100" stroke-width="4"/><rect x="50" y="50" width="20" height="20" rx="4" fill="#FFF59D"/></svg>`,
-    alien: `<svg viewBox="0 0 120 120"><line x1="60" y1="16" x2="60" y2="34" stroke="#66BB6A" stroke-width="5"/><circle cx="60" cy="14" r="7" fill="#AED581"/><ellipse cx="60" cy="64" rx="36" ry="30" fill="#81C784" stroke="#388E3C" stroke-width="4"/><circle cx="42" cy="58" r="7" fill="#FFFFFF"/><circle cx="60" cy="54" r="7" fill="#FFFFFF"/><circle cx="78" cy="58" r="7" fill="#FFFFFF"/><circle cx="42" cy="58" r="3" fill="#263238"/><circle cx="60" cy="54" r="3" fill="#263238"/><circle cx="78" cy="58" r="3" fill="#263238"/><path d="M46 74 Q60 84 74 74" stroke="#1B5E20" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`,
-    monkey: `<svg viewBox="0 0 120 120"><circle cx="24" cy="58" r="14" fill="#8D6E63"/><circle cx="96" cy="58" r="14" fill="#8D6E63"/><circle cx="24" cy="58" r="8" fill="#FFCCBC"/><circle cx="96" cy="58" r="8" fill="#FFCCBC"/><circle cx="60" cy="58" r="32" fill="#8D6E63"/><ellipse cx="60" cy="68" rx="22" ry="16" fill="#FFCCBC"/><circle cx="48" cy="52" r="4" fill="#3E2723"/><circle cx="72" cy="52" r="4" fill="#3E2723"/><path d="M50 72 Q60 80 70 72" stroke="#5D4037" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`,
-    fishbowl: `<svg viewBox="0 0 120 120"><circle cx="60" cy="64" r="38" fill="#E1F5FE" stroke="#29B6F6" stroke-width="4"/><path d="M24 58 Q60 66 96 58 A38 38 0 0 1 24 58 Z" fill="#81D4FA"/><ellipse cx="56" cy="72" rx="14" ry="9" fill="#FF7043"/><polygon points="70,72 82,64 82,80" fill="#FF7043"/><circle cx="48" cy="70" r="2.5" fill="#263238"/><rect x="38" y="22" width="44" height="8" rx="4" fill="#29B6F6"/></svg>`,
-    stroller: `<svg viewBox="0 0 120 120"><path d="M30 56 H86 C86 80 30 80 30 56 Z" fill="#F48FB1" stroke="#C2185B" stroke-width="4"/><path d="M58 56 V28 C78 28 86 40 86 56 Z" fill="#F8BBD0" stroke="#C2185B" stroke-width="4"/><path d="M30 56 L20 38 H12" stroke="#546E7A" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="42" cy="88" r="11" fill="#37474F" stroke="#ECEFF1" stroke-width="3"/><circle cx="76" cy="88" r="11" fill="#37474F" stroke="#ECEFF1" stroke-width="3"/></svg>`,
-    tooth: `<svg viewBox="0 0 120 120"><path d="M34 32 C24 32 22 58 30 78 C34 90 42 96 48 82 C54 70 66 70 72 82 C78 96 86 90 90 78 C98 58 96 32 86 32 C74 32 68 38 60 38 C52 38 46 32 34 32 Z" fill="#FFFFFF" stroke="#90CAF9" stroke-width="5" stroke-linejoin="round"/><circle cx="48" cy="52" r="3.5" fill="#37474F"/><circle cx="72" cy="52" r="3.5" fill="#37474F"/><path d="M52 60 Q60 66 68 60" stroke="#37474F" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>`,
-    trophy: `<svg viewBox="0 0 120 120"><path d="M36 26 H84 V54 C84 74 36 74 36 54 Z" fill="#FFD54F" stroke="#FFA000" stroke-width="4"/><path d="M36 34 H22 C22 52 30 56 36 54 M84 34 H98 C98 52 90 56 84 54" stroke="#FFA000" stroke-width="5" fill="none"/><rect x="54" y="70" width="12" height="18" fill="#FFA000"/><rect x="38" y="88" width="44" height="10" rx="4" fill="#8D6E63"/></svg>`,
-    seed: `<svg viewBox="0 0 120 120"><path d="M20 92 Q60 82 100 92" stroke="#8D6E63" stroke-width="8" fill="none" stroke-linecap="round"/><ellipse cx="60" cy="82" rx="12" ry="8" fill="#6D4C41"/><path d="M60 76 V42" stroke="#43A047" stroke-width="6" stroke-linecap="round"/><path d="M60 52 C40 52 34 32 54 32 C58 32 60 44 60 52 Z" fill="#66BB6A"/><path d="M60 52 C80 52 86 32 66 32 C62 32 60 44 60 52 Z" fill="#81C784"/></svg>`,
-    acorn: `<svg viewBox="0 0 120 120"><path d="M34 52 C34 86 60 98 60 98 C60 98 86 86 86 52 Z" fill="#D78B48" stroke="#8D6E63" stroke-width="4"/><path d="M28 52 C28 32 92 32 92 52 Z" fill="#6D4C41" stroke="#4E342E" stroke-width="4"/><path d="M60 34 V20" stroke="#4E342E" stroke-width="6" stroke-linecap="round"/></svg>`,
-    kiwi: `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="38" fill="#8D6E63"/><circle cx="60" cy="60" r="32" fill="#9CCC65"/><circle cx="60" cy="60" r="14" fill="#F1F8E9"/><circle cx="60" cy="40" r="2.5" fill="#263238"/><circle cx="76" cy="48" r="2.5" fill="#263238"/><circle cx="76" cy="72" r="2.5" fill="#263238"/><circle cx="60" cy="80" r="2.5" fill="#263238"/><circle cx="44" cy="72" r="2.5" fill="#263238"/><circle cx="44" cy="48" r="2.5" fill="#263238"/></svg>`,
-    owl: `<svg viewBox="0 0 120 120"><ellipse cx="60" cy="66" rx="34" ry="36" fill="#8D6E63" stroke="#5D4037" stroke-width="4"/><polygon points="32,36 44,44 30,52" fill="#5D4037"/><polygon points="88,36 76,44 90,52" fill="#5D4037"/><circle cx="46" cy="56" r="13" fill="#FFF8E1"/><circle cx="74" cy="56" r="13" fill="#FFF8E1"/><circle cx="46" cy="56" r="5" fill="#263238"/><circle cx="74" cy="56" r="5" fill="#263238"/><polygon points="60,60 54,70 66,70" fill="#FFA000"/></svg>`,
-    cooking: `<svg viewBox="0 0 120 120"><circle cx="52" cy="62" r="34" fill="#37474F" stroke="#263238" stroke-width="4"/><rect x="82" y="56" width="28" height="10" rx="5" fill="#FF7043" stroke="#D84315" stroke-width="3"/><ellipse cx="52" cy="62" rx="22" ry="20" fill="#FFFFFF"/><circle cx="52" cy="62" r="10" fill="#FFB300"/></svg>`,
-    sweetpotato: `<svg viewBox="0 0 120 120"><ellipse cx="60" cy="62" rx="38" ry="22" transform="rotate(-25 60 62)" fill="#8E24AA" stroke="#6A1B9A" stroke-width="4"/><ellipse cx="72" cy="56" rx="14" ry="12" fill="#FFD54F" stroke="#FBC02D" stroke-width="3"/></svg>`,
-    dress_shoes: `<svg viewBox="0 0 120 120"><path d="M20 56 C20 82 36 88 96 88 C102 88 102 68 88 68 C68 68 62 78 44 74 C36 72 34 56 20 56 Z" fill="#EC407A" stroke="#C2185B" stroke-width="4"/><circle cx="84" cy="66" r="7" fill="#FFD54F" stroke="#F57F17" stroke-width="2"/></svg>`,
-    head: `<svg viewBox="0 0 120 120"><circle cx="60" cy="64" r="30" fill="#FFE0B2" stroke="#5D4037" stroke-width="3"/><path d="M28 60 C28 24 92 24 92 60 C84 42 36 42 28 60 Z" fill="#3E2723"/><path d="M84 26 L98 20 M88 36 L102 34" stroke="#FF7043" stroke-width="4" stroke-linecap="round"/></svg>`,
-    kid: `<svg viewBox="0 0 120 120"><circle cx="60" cy="64" r="28" fill="#FFE0B2" stroke="#5D4037" stroke-width="3"/><path d="M30 52 C30 26 90 26 90 52 Z" fill="#29B6F6" stroke="#0288D1" stroke-width="3"/><rect x="54" y="46" width="44" height="8" rx="4" fill="#0288D1"/><circle cx="48" cy="62" r="3.5" fill="#3E2723"/><circle cx="72" cy="62" r="3.5" fill="#3E2723"/><path d="M50 74 Q60 82 70 74" stroke="#5D4037" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>`,
-    cabbage: `<svg viewBox="0 0 120 120"><path d="M40 94 C26 70 26 30 48 26 C56 24 64 24 72 26 C94 30 94 70 80 94 Z" fill="#81C784" stroke="#388E3C" stroke-width="4"/><path d="M44 94 C40 66 80 66 76 94 Z" fill="#FFF9C4" stroke="#AED581" stroke-width="3"/><path d="M60 32 V88" stroke="#F1F8E9" stroke-width="5" stroke-linecap="round"/></svg>`
+  var SVG_ILLUSTS = {
+    child: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"60\" cy=\"64\" r=\"38\" fill=\"#FFCCBC\"/><path d=\"M24 58 C24 30 96 30 96 58 C82 44 38 44 24 58 Z\" fill=\"#4E342E\"/><circle cx=\"46\" cy=\"62\" r=\"5\" fill=\"#3E2723\"/><circle cx=\"74\" cy=\"62\" r=\"5\" fill=\"#3E2723\"/><circle cx=\"38\" cy=\"72\" r=\"6\" fill=\"#FF8A80\" opacity=\"0.6\"/><circle cx=\"82\" cy=\"72\" r=\"6\" fill=\"#FF8A80\" opacity=\"0.6\"/><path d=\"M48 76 Q60 88 72 76\" stroke=\"#D84315\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    cucumber: ("<svg viewBox=\"0 0 120 120\"><rect x=\"38\" y=\"18\" width=\"44\" height=\"84\" rx=\"22\" transform=\"rotate(-18 60 60)\" fill=\"#43A047\" stroke=\"#2E7D32\" stroke-width=\"4\"/><circle cx=\"52\" cy=\"45\" r=\"3\" fill=\"#A5D6A7\"/><circle cx=\"68\" cy=\"62\" r=\"3\" fill=\"#A5D6A7\"/><circle cx=\"58\" cy=\"78\" r=\"3\" fill=\"#A5D6A7\"/><path d=\"M44 20 Q50 10 58 18\" stroke=\"#66BB6A\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    butterfly: ("<svg viewBox=\"0 0 120 120\"><ellipse cx=\"38\" cy=\"46\" rx=\"24\" ry=\"20\" fill=\"#FF80AB\"/><ellipse cx=\"82\" cy=\"46\" rx=\"24\" ry=\"20\" fill=\"#FF80AB\"/><ellipse cx=\"42\" cy=\"76\" rx=\"18\" ry=\"15\" fill=\"#FF4081\"/><ellipse cx=\"78\" cy=\"76\" rx=\"18\" ry=\"15\" fill=\"#FF4081\"/><circle cx=\"36\" cy=\"44\" r=\"7\" fill=\"#FFF59D\"/><circle cx=\"84\" cy=\"44\" r=\"7\" fill=\"#FFF59D\"/><rect x=\"55\" y=\"32\" width=\"10\" height=\"58\" rx=\"5\" fill=\"#4E342E\"/><path d=\"M56 32 Q46 18 40 22 M64 32 Q74 18 80 22\" stroke=\"#4E342E\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    hat: ("<svg viewBox=\"0 0 120 120\"><ellipse cx=\"60\" cy=\"80\" rx=\"50\" ry=\"14\" fill=\"#FFA000\"/><path d=\"M26 78 C26 38 94 38 94 78 Z\" fill=\"#FFD54F\"/><path d=\"M27 70 H93\" stroke=\"#FF7043\" stroke-width=\"8\"/><circle cx=\"60\" cy=\"36\" r=\"8\" fill=\"#FF7043\"/></svg>"),
+    banana: ("<svg viewBox=\"0 0 120 120\"><path d=\"M28 82 Q65 98 92 36 Q96 24 88 22 Q78 58 26 68 Z\" fill=\"#FFEB3B\" stroke=\"#FBC02D\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M36 92 Q76 104 98 44 Q84 72 34 80 Z\" fill=\"#FDD835\" stroke=\"#F9A825\" stroke-width=\"3\" stroke-linejoin=\"round\"/><rect x=\"84\" y=\"16\" width=\"8\" height=\"10\" rx=\"2\" fill=\"#795548\"/></svg>"),
+    lion: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"60\" cy=\"60\" r=\"44\" fill=\"#EF6C00\"/><circle cx=\"34\" cy=\"34\" r=\"12\" fill=\"#FFB74D\"/><circle cx=\"86\" cy=\"34\" r=\"12\" fill=\"#FFB74D\"/><circle cx=\"60\" cy=\"62\" r=\"32\" fill=\"#FFD54F\"/><circle cx=\"48\" cy=\"56\" r=\"4.5\" fill=\"#3E2723\"/><circle cx=\"72\" cy=\"56\" r=\"4.5\" fill=\"#3E2723\"/><polygon points=\"60,62 53,70 67,70\" fill=\"#5D4037\"/><path d=\"M52 76 Q60 82 68 76\" stroke=\"#5D4037\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    milk: ("<svg viewBox=\"0 0 120 120\"><polygon points=\"36,38 60,20 84,38\" fill=\"#42A5F5\" stroke=\"#1E88E5\" stroke-width=\"4\"/><rect x=\"36\" y=\"38\" width=\"48\" height=\"62\" rx=\"6\" fill=\"#FFFFFF\" stroke=\"#1E88E5\" stroke-width=\"4\"/><rect x=\"36\" y=\"56\" width=\"48\" height=\"24\" fill=\"#64B5F6\"/><circle cx=\"60\" cy=\"68\" r=\"7\" fill=\"#FFF\"/></svg>"),
+    tree: ("<svg viewBox=\"0 0 120 120\"><rect x=\"48\" y=\"66\" width=\"24\" height=\"38\" rx=\"4\" fill=\"#8D6E63\"/><circle cx=\"60\" cy=\"44\" r=\"28\" fill=\"#66BB6A\"/><circle cx=\"40\" cy=\"56\" r=\"22\" fill=\"#4CAF50\"/><circle cx=\"80\" cy=\"56\" r=\"22\" fill=\"#4CAF50\"/><circle cx=\"52\" cy=\"38\" r=\"5\" fill=\"#EF5350\"/><circle cx=\"72\" cy=\"50\" r=\"5\" fill=\"#EF5350\"/></svg>"),
+    grape: ("<svg viewBox=\"0 0 120 120\"><path d=\"M58 16 Q66 26 60 34\" stroke=\"#6D4C41\" stroke-width=\"5\" fill=\"none\"/><path d=\"M62 24 Q80 18 76 32 Q66 34 62 24 Z\" fill=\"#66BB6A\"/><circle cx=\"46\" cy=\"46\" r=\"13\" fill=\"#8E24AA\"/><circle cx=\"66\" cy=\"46\" r=\"13\" fill=\"#9C27B0\"/><circle cx=\"78\" cy=\"60\" r=\"13\" fill=\"#7B1FA2\"/><circle cx=\"38\" cy=\"64\" r=\"13\" fill=\"#9C27B0\"/><circle cx=\"58\" cy=\"64\" r=\"13\" fill=\"#AB47BC\"/><circle cx=\"48\" cy=\"80\" r=\"13\" fill=\"#7B1FA2\"/><circle cx=\"68\" cy=\"80\" r=\"13\" fill=\"#8E24AA\"/><circle cx=\"58\" cy=\"95\" r=\"13\" fill=\"#6A1B9A\"/></svg>"),
+    hippo: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"36\" cy=\"32\" r=\"10\" fill=\"#78909C\"/><circle cx=\"84\" cy=\"32\" r=\"10\" fill=\"#78909C\"/><circle cx=\"60\" cy=\"54\" r=\"28\" fill=\"#90A4AE\"/><ellipse cx=\"60\" cy=\"74\" rx=\"36\" ry=\"24\" fill=\"#B0BEC5\"/><circle cx=\"48\" cy=\"46\" r=\"4\" fill=\"#263238\"/><circle cx=\"72\" cy=\"46\" r=\"4\" fill=\"#263238\"/><ellipse cx=\"48\" cy=\"68\" rx=\"4\" ry=\"6\" fill=\"#546E7A\"/><ellipse cx=\"72\" cy=\"68\" rx=\"4\" ry=\"6\" fill=\"#546E7A\"/></svg>"),
+    train: ("<svg viewBox=\"0 0 120 120\"><rect x=\"20\" y=\"44\" width=\"80\" height=\"42\" rx=\"10\" fill=\"#E53935\"/><rect x=\"64\" y=\"26\" width=\"32\" height=\"24\" rx=\"6\" fill=\"#42A5F5\"/><rect x=\"28\" y=\"28\" width=\"12\" height=\"18\" rx=\"3\" fill=\"#546E7A\"/><circle cx=\"40\" cy=\"90\" r=\"12\" fill=\"#37474F\" stroke=\"#FFD54F\" stroke-width=\"4\"/><circle cx=\"80\" cy=\"90\" r=\"12\" fill=\"#37474F\" stroke=\"#FFD54F\" stroke-width=\"4\"/></svg>"),
+    rabbit: ("<svg viewBox=\"0 0 120 120\"><ellipse cx=\"44\" cy=\"32\" rx=\"10\" ry=\"24\" fill=\"#FFF\" stroke=\"#F8BBD0\" stroke-width=\"4\"/><ellipse cx=\"76\" cy=\"32\" rx=\"10\" ry=\"24\" fill=\"#FFF\" stroke=\"#F8BBD0\" stroke-width=\"4\"/><ellipse cx=\"44\" cy=\"34\" rx=\"5\" ry=\"15\" fill=\"#F48FB1\"/><ellipse cx=\"76\" cy=\"34\" rx=\"5\" ry=\"15\" fill=\"#F48FB1\"/><circle cx=\"60\" cy=\"70\" r=\"32\" fill=\"#FFFFFF\" stroke=\"#F8BBD0\" stroke-width=\"4\"/><circle cx=\"48\" cy=\"64\" r=\"4.5\" fill=\"#D81B60\"/><circle cx=\"72\" cy=\"64\" r=\"4.5\" fill=\"#D81B60\"/><ellipse cx=\"60\" cy=\"73\" rx=\"5\" ry=\"4\" fill=\"#F06292\"/></svg>"),
+    moon: ("<svg viewBox=\"0 0 120 120\"><path d=\"M74 22 C44 26 28 58 44 84 C56 102 82 104 96 92 C72 94 56 76 60 52 C62 38 68 28 74 22 Z\" fill=\"#FFD54F\" stroke=\"#FFA000\" stroke-width=\"4\" stroke-linejoin=\"round\"/><circle cx=\"32\" cy=\"36\" r=\"4\" fill=\"#FFF176\"/><circle cx=\"88\" cy=\"38\" r=\"5\" fill=\"#FFF176\"/></svg>"),
+    bear: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"34\" cy=\"36\" r=\"14\" fill=\"#8D6E63\"/><circle cx=\"86\" cy=\"36\" r=\"14\" fill=\"#8D6E63\"/><circle cx=\"60\" cy=\"64\" r=\"36\" fill=\"#A1887F\"/><ellipse cx=\"60\" cy=\"72\" rx=\"15\" ry=\"12\" fill=\"#EFEBE9\"/><circle cx=\"46\" cy=\"56\" r=\"4.5\" fill=\"#3E2723\"/><circle cx=\"74\" cy=\"56\" r=\"4.5\" fill=\"#3E2723\"/><ellipse cx=\"60\" cy=\"68\" rx=\"6\" ry=\"4\" fill=\"#3E2723\"/></svg>"),
+    star: ("<svg viewBox=\"0 0 120 120\"><polygon points=\"60,14 73,44 106,47 81,69 88,102 60,84 32,102 39,69 14,47 47,44\" fill=\"#FFEE58\" stroke=\"#FBC02D\" stroke-width=\"5\" stroke-linejoin=\"round\"/><circle cx=\"50\" cy=\"58\" r=\"4\" fill=\"#3E2723\"/><circle cx=\"70\" cy=\"58\" r=\"4\" fill=\"#3E2723\"/><path d=\"M53 68 Q60 74 67 68\" stroke=\"#3E2723\" stroke-width=\"3.5\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    water: ("<svg viewBox=\"0 0 120 120\"><path d=\"M60 18 C60 18 26 60 26 80 C26 98 41 106 60 106 C79 106 94 98 94 80 C94 60 60 18 60 18 Z\" fill=\"#29B6F6\" stroke=\"#0288D1\" stroke-width=\"4\"/><path d=\"M42 74 Q42 88 54 92\" stroke=\"#E1F5FE\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    wave: ("<svg viewBox=\"0 0 120 120\"><path d=\"M12 78 C28 42 58 42 72 66 C56 58 44 68 48 82 H108 C108 94 88 100 60 100 C30 100 12 92 12 78 Z\" fill=\"#29B6F6\" stroke=\"#0288D1\" stroke-width=\"4\" stroke-linejoin=\"round\"/><circle cx=\"78\" cy=\"48\" r=\"5\" fill=\"#81D4FA\"/><circle cx=\"92\" cy=\"58\" r=\"4\" fill=\"#81D4FA\"/></svg>"),
+    rice: ("<svg viewBox=\"0 0 120 120\"><path d=\"M26 62 C26 34 94 34 94 62 Z\" fill=\"#FFFFFF\" stroke=\"#CFD8DC\" stroke-width=\"4\"/><path d=\"M22 60 H98 L86 96 C84 100 78 102 60 102 C42 102 36 100 34 96 Z\" fill=\"#FF7043\" stroke=\"#D84315\" stroke-width=\"4\"/><path d=\"M36 76 H84\" stroke=\"#FFE082\" stroke-width=\"5\" stroke-linecap=\"round\"/></svg>"),
+    tofu: ("<svg viewBox=\"0 0 120 120\"><ellipse cx=\"60\" cy=\"82\" rx=\"46\" ry=\"16\" fill=\"#FFCC80\" stroke=\"#FB8C00\" stroke-width=\"4\"/><rect x=\"30\" y=\"38\" width=\"60\" height=\"40\" rx=\"8\" fill=\"#FFFDF7\" stroke=\"#CFD8DC\" stroke-width=\"4\"/><line x1=\"60\" y1=\"38\" x2=\"60\" y2=\"78\" stroke=\"#ECEFF1\" stroke-width=\"3\"/><line x1=\"30\" y1=\"58\" x2=\"90\" y2=\"58\" stroke=\"#ECEFF1\" stroke-width=\"3\"/><ellipse cx=\"60\" cy=\"46\" rx=\"10\" ry=\"5\" fill=\"#66BB6A\"/></svg>"),
+    stew: ("<svg viewBox=\"0 0 120 120\"><path d=\"M18 56 H102 L92 94 C90 100 30 100 28 94 Z\" fill=\"#37474F\"/><ellipse cx=\"60\" cy=\"56\" rx=\"42\" ry=\"14\" fill=\"#FF7043\" stroke=\"#37474F\" stroke-width=\"4\"/><circle cx=\"48\" cy=\"56\" r=\"6\" fill=\"#FFF59D\"/><circle cx=\"70\" cy=\"54\" r=\"6\" fill=\"#66BB6A\"/><path d=\"M46 34 Q42 24 48 18 M74 34 Q70 24 76 18\" stroke=\"#FF8A65\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    snow: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"60\" cy=\"78\" r=\"26\" fill=\"#FFFFFF\" stroke=\"#90CAF9\" stroke-width=\"4\"/><circle cx=\"60\" cy=\"42\" r=\"18\" fill=\"#FFFFFF\" stroke=\"#90CAF9\" stroke-width=\"4\"/><circle cx=\"54\" cy=\"39\" r=\"3\" fill=\"#37474F\"/><circle cx=\"66\" cy=\"39\" r=\"3\" fill=\"#37474F\"/><polygon points=\"60,43 74,46 60,49\" fill=\"#FF7043\"/><path d=\"M44 56 Q60 64 76 56\" stroke=\"#E53935\" stroke-width=\"7\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    ball: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"60\" cy=\"60\" r=\"42\" fill=\"#FFCA28\" stroke=\"#F57F17\" stroke-width=\"4\"/><path d=\"M22 46 Q60 70 98 46\" stroke=\"#EF5350\" stroke-width=\"8\" fill=\"none\"/><path d=\"M24 76 Q60 54 96 76\" stroke=\"#29B6F6\" stroke-width=\"8\" fill=\"none\"/></svg>"),
+    earth: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"60\" cy=\"60\" r=\"42\" fill=\"#29B6F6\" stroke=\"#0288D1\" stroke-width=\"4\"/><path d=\"M32 36 C48 34 54 48 44 62 C36 72 44 86 58 88 C40 94 24 78 24 58 C24 48 28 40 32 36 Z\" fill=\"#66BB6A\"/><path d=\"M72 30 C88 36 96 52 90 70 C82 76 70 68 72 54 C74 44 66 36 72 30 Z\" fill=\"#66BB6A\"/></svg>"),
+    baseball: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"60\" cy=\"60\" r=\"42\" fill=\"#FFFFFF\" stroke=\"#CFD8DC\" stroke-width=\"4\"/><path d=\"M34 28 Q52 60 34 92\" stroke=\"#E53935\" stroke-width=\"4\" stroke-dasharray=\"6 4\" fill=\"none\"/><path d=\"M86 28 Q68 60 86 92\" stroke=\"#E53935\" stroke-width=\"4\" stroke-dasharray=\"6 4\" fill=\"none\"/></svg>"),
+    house: ("<svg viewBox=\"0 0 120 120\"><polygon points=\"16,58 60,20 104,58\" fill=\"#EF5350\" stroke=\"#C62828\" stroke-width=\"4\" stroke-linejoin=\"round\"/><rect x=\"28\" y=\"58\" width=\"64\" height=\"44\" rx=\"4\" fill=\"#FFF8E1\" stroke=\"#FFB74D\" stroke-width=\"4\"/><rect x=\"50\" y=\"72\" width=\"20\" height=\"30\" rx=\"3\" fill=\"#8D6E63\"/></svg>"),
+    flower: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"60\" cy=\"34\" r=\"16\" fill=\"#FF80AB\"/><circle cx=\"84\" cy=\"52\" r=\"16\" fill=\"#FF80AB\"/><circle cx=\"74\" cy=\"80\" r=\"16\" fill=\"#FF80AB\"/><circle cx=\"46\" cy=\"80\" r=\"16\" fill=\"#FF80AB\"/><circle cx=\"36\" cy=\"52\" r=\"16\" fill=\"#FF80AB\"/><circle cx=\"60\" cy=\"58\" r=\"15\" fill=\"#FFEE58\" stroke=\"#FBC02D\" stroke-width=\"3\"/></svg>"),
+    cloud: ("<svg viewBox=\"0 0 120 120\"><path d=\"M32 82 H88 C100 82 106 72 104 62 C102 52 92 48 86 48 C82 32 64 26 50 34 C38 28 24 38 24 52 C14 54 12 66 18 74 C22 80 26 82 32 82 Z\" fill=\"#81D4FA\" stroke=\"#29B6F6\" stroke-width=\"4\" stroke-linejoin=\"round\"/></svg>"),
+    apple: ("<svg viewBox=\"0 0 120 120\"><path d=\"M60 34 C42 26 22 42 24 66 C26 90 44 104 60 98 C76 104 94 90 96 66 C98 42 78 26 60 34 Z\" fill=\"#EF5350\" stroke=\"#C62828\" stroke-width=\"4\"/><path d=\"M60 34 Q62 18 70 16\" stroke=\"#6D4C41\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M64 24 Q82 16 80 30 Q70 34 64 24 Z\" fill=\"#66BB6A\"/></svg>"),
+    watermelon: ("<svg viewBox=\"0 0 120 120\"><path d=\"M16 44 A44 44 0 0 0 104 44 Z\" fill=\"#43A047\"/><path d=\"M24 44 A36 36 0 0 0 96 44 Z\" fill=\"#EF5350\"/><circle cx=\"46\" cy=\"58\" r=\"3.5\" fill=\"#263238\"/><circle cx=\"60\" cy=\"66\" r=\"3.5\" fill=\"#263238\"/><circle cx=\"74\" cy=\"58\" r=\"3.5\" fill=\"#263238\"/></svg>"),
+    bag: ("<svg viewBox=\"0 0 120 120\"><path d=\"M44 36 C44 20 76 20 76 36\" stroke=\"#FB8C00\" stroke-width=\"6\" fill=\"none\"/><rect x=\"26\" y=\"36\" width=\"68\" height=\"64\" rx=\"18\" fill=\"#FFB74D\" stroke=\"#F57C00\" stroke-width=\"4\"/><rect x=\"38\" y=\"62\" width=\"44\" height=\"26\" rx=\"8\" fill=\"#FFF3E0\"/></svg>"),
+    drawer: ("<svg viewBox=\"0 0 120 120\"><rect x=\"22\" y=\"22\" width=\"76\" height=\"76\" rx=\"10\" fill=\"#8D6E63\" stroke=\"#5D4037\" stroke-width=\"4\"/><rect x=\"30\" y=\"30\" width=\"60\" height=\"26\" rx=\"5\" fill=\"#FFE0B2\" stroke=\"#5D4037\" stroke-width=\"3\"/><rect x=\"30\" y=\"64\" width=\"60\" height=\"26\" rx=\"5\" fill=\"#FFE0B2\" stroke=\"#5D4037\" stroke-width=\"3\"/><circle cx=\"60\" cy=\"43\" r=\"5\" fill=\"#5D4037\"/><circle cx=\"60\" cy=\"77\" r=\"5\" fill=\"#5D4037\"/></svg>"),
+    duck: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"52\" cy=\"44\" r=\"20\" fill=\"#FFEE58\"/><ellipse cx=\"64\" cy=\"78\" rx=\"32\" ry=\"22\" fill=\"#FDD835\"/><polygon points=\"32,42 16,47 32,52\" fill=\"#FF7043\"/><circle cx=\"46\" cy=\"40\" r=\"4\" fill=\"#3E2723\"/></svg>"),
+    ostrich: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"42\" cy=\"24\" r=\"12\" fill=\"#FFCCBC\" stroke=\"#8D6E63\" stroke-width=\"3\"/><polygon points=\"30,24 18,27 30,30\" fill=\"#FFA000\"/><rect x=\"38\" y=\"34\" width=\"8\" height=\"32\" rx=\"4\" fill=\"#FFCCBC\"/><ellipse cx=\"64\" cy=\"68\" rx=\"28\" ry=\"18\" fill=\"#5D4037\"/><line x1=\"56\" y1=\"84\" x2=\"52\" y2=\"108\" stroke=\"#FFA000\" stroke-width=\"5\" stroke-linecap=\"round\"/><line x1=\"72\" y1=\"84\" x2=\"76\" y2=\"108\" stroke=\"#FFA000\" stroke-width=\"5\" stroke-linecap=\"round\"/><circle cx=\"39\" cy=\"22\" r=\"3\" fill=\"#263238\"/></svg>"),
+    bus: ("<svg viewBox=\"0 0 120 120\"><rect x=\"16\" y=\"34\" width=\"88\" height=\"52\" rx=\"12\" fill=\"#FFCA28\" stroke=\"#FFA000\" stroke-width=\"4\"/><rect x=\"26\" y=\"44\" width=\"20\" height=\"18\" rx=\"4\" fill=\"#E1F5FE\"/><rect x=\"52\" y=\"44\" width=\"20\" height=\"18\" rx=\"4\" fill=\"#E1F5FE\"/><rect x=\"78\" y=\"44\" width=\"18\" height=\"18\" rx=\"4\" fill=\"#E1F5FE\"/><circle cx=\"38\" cy=\"88\" r=\"11\" fill=\"#37474F\"/><circle cx=\"82\" cy=\"88\" r=\"11\" fill=\"#37474F\"/></svg>"),
+    car: ("<svg viewBox=\"0 0 120 120\"><path d=\"M28 62 L40 38 H80 L92 62 Z\" fill=\"#4FC3F7\"/><rect x=\"16\" y=\"58\" width=\"88\" height=\"28\" rx=\"12\" fill=\"#039BE5\"/><circle cx=\"38\" cy=\"88\" r=\"12\" fill=\"#37474F\" stroke=\"#ECEFF1\" stroke-width=\"4\"/><circle cx=\"82\" cy=\"88\" r=\"12\" fill=\"#37474F\" stroke=\"#ECEFF1\" stroke-width=\"4\"/></svg>"),
+    piano: ("<svg viewBox=\"0 0 120 120\"><rect x=\"18\" y=\"28\" width=\"84\" height=\"64\" rx=\"10\" fill=\"#ECEFF1\" stroke=\"#455A64\" stroke-width=\"4\"/><line x1=\"39\" y1=\"28\" x2=\"39\" y2=\"92\" stroke=\"#455A64\" stroke-width=\"3\"/><line x1=\"60\" y1=\"28\" x2=\"60\" y2=\"92\" stroke=\"#455A64\" stroke-width=\"3\"/><line x1=\"81\" y1=\"28\" x2=\"81\" y2=\"92\" stroke=\"#455A64\" stroke-width=\"3\"/><rect x=\"33\" y=\"28\" width=\"12\" height=\"36\" fill=\"#263238\"/><rect x=\"54\" y=\"28\" width=\"12\" height=\"36\" fill=\"#263238\"/><rect x=\"75\" y=\"28\" width=\"12\" height=\"36\" fill=\"#263238\"/></svg>"),
+    radio: ("<svg viewBox=\"0 0 120 120\"><line x1=\"34\" y1=\"40\" x2=\"78\" y2=\"16\" stroke=\"#546E7A\" stroke-width=\"5\" stroke-linecap=\"round\"/><circle cx=\"78\" cy=\"16\" r=\"5\" fill=\"#FF5252\"/><rect x=\"20\" y=\"40\" width=\"80\" height=\"54\" rx=\"12\" fill=\"#29B6F6\" stroke=\"#0288D1\" stroke-width=\"4\"/><circle cx=\"46\" cy=\"67\" r=\"16\" fill=\"#FFF9C4\" stroke=\"#0288D1\" stroke-width=\"3\"/><circle cx=\"82\" cy=\"58\" r=\"6\" fill=\"#FFD54F\"/><circle cx=\"82\" cy=\"76\" r=\"6\" fill=\"#FF7043\"/></svg>"),
+    camera: ("<svg viewBox=\"0 0 120 120\"><rect x=\"38\" y=\"26\" width=\"26\" height=\"12\" rx=\"4\" fill=\"#546E7A\"/><rect x=\"18\" y=\"36\" width=\"84\" height=\"58\" rx=\"14\" fill=\"#FF7043\" stroke=\"#D84315\" stroke-width=\"4\"/><circle cx=\"60\" cy=\"65\" r=\"20\" fill=\"#E1F5FE\" stroke=\"#37474F\" stroke-width=\"5\"/><circle cx=\"86\" cy=\"48\" r=\"5\" fill=\"#FFEE58\"/></svg>"),
+    gem: ("<svg viewBox=\"0 0 120 120\"><polygon points=\"36,26 84,26 104,50 60,98 16,50\" fill=\"#4FC3F7\" stroke=\"#0288D1\" stroke-width=\"4\" stroke-linejoin=\"round\"/><polyline points=\"16,50 104,50\" stroke=\"#0288D1\" stroke-width=\"3\"/><polyline points=\"36,26 48,50 60,98 72,50 84,26\" stroke=\"#B3E5FC\" stroke-width=\"3\" fill=\"none\"/></svg>"),
+    fox: ("<svg viewBox=\"0 0 120 120\"><polygon points=\"24,22 48,46 28,62\" fill=\"#FF7043\"/><polygon points=\"96,22 72,46 92,62\" fill=\"#FF7043\"/><polygon points=\"22,52 98,52 60,98\" fill=\"#FF8A65\" stroke=\"#E64A19\" stroke-width=\"4\" stroke-linejoin=\"round\"/><polygon points=\"36,64 60,96 48,64\" fill=\"#FFF3E0\"/><polygon points=\"84,64 60,96 72,64\" fill=\"#FFF3E0\"/><circle cx=\"46\" cy=\"60\" r=\"4.5\" fill=\"#3E2723\"/><circle cx=\"74\" cy=\"60\" r=\"4.5\" fill=\"#3E2723\"/><circle cx=\"60\" cy=\"94\" r=\"6\" fill=\"#3E2723\"/></svg>"),
+    raccoon: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"34\" cy=\"36\" r=\"13\" fill=\"#6D4C41\"/><circle cx=\"86\" cy=\"36\" r=\"13\" fill=\"#6D4C41\"/><circle cx=\"60\" cy=\"64\" r=\"36\" fill=\"#A1887F\" stroke=\"#5D4037\" stroke-width=\"4\"/><ellipse cx=\"44\" cy=\"58\" rx=\"14\" ry=\"10\" fill=\"#4E342E\"/><ellipse cx=\"76\" cy=\"58\" rx=\"14\" ry=\"10\" fill=\"#4E342E\"/><circle cx=\"44\" cy=\"58\" r=\"4\" fill=\"#FFFFFF\"/><circle cx=\"76\" cy=\"58\" r=\"4\" fill=\"#FFFFFF\"/><ellipse cx=\"60\" cy=\"74\" rx=\"14\" ry=\"10\" fill=\"#EFEBE9\"/><circle cx=\"60\" cy=\"70\" r=\"5\" fill=\"#3E2723\"/></svg>"),
+    squirrel: ("<svg viewBox=\"0 0 120 120\"><path d=\"M78 86 C108 86 112 38 86 38 C72 38 72 62 82 68\" fill=\"#D78B48\" stroke=\"#8D6E63\" stroke-width=\"4\" stroke-linecap=\"round\"/><circle cx=\"50\" cy=\"56\" r=\"24\" fill=\"#F4A460\" stroke=\"#8D6E63\" stroke-width=\"4\"/><ellipse cx=\"52\" cy=\"84\" rx=\"20\" ry=\"16\" fill=\"#F4A460\" stroke=\"#8D6E63\" stroke-width=\"4\"/><circle cx=\"42\" cy=\"52\" r=\"4\" fill=\"#3E2723\"/></svg>"),
+    whale: ("<svg viewBox=\"0 0 120 120\"><path d=\"M18 74 C18 42 74 38 88 64 C96 64 106 54 108 46 C108 62 102 76 88 78 Z\" fill=\"#29B6F6\" stroke=\"#0288D1\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M52 38 Q46 20 34 22 M52 38 Q58 20 70 22\" stroke=\"#81D4FA\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"38\" cy=\"60\" r=\"4\" fill=\"#263238\"/></svg>"),
+    frog: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"40\" cy=\"40\" r=\"14\" fill=\"#66BB6A\"/><circle cx=\"80\" cy=\"40\" r=\"14\" fill=\"#66BB6A\"/><circle cx=\"40\" cy=\"40\" r=\"6\" fill=\"#263238\"/><circle cx=\"80\" cy=\"40\" r=\"6\" fill=\"#263238\"/><ellipse cx=\"60\" cy=\"68\" rx=\"38\" ry=\"26\" fill=\"#66BB6A\" stroke=\"#388E3C\" stroke-width=\"4\"/><path d=\"M40 72 Q60 86 80 72\" stroke=\"#2E7D32\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"34\" cy=\"66\" r=\"6\" fill=\"#FF8A80\" opacity=\"0.7\"/><circle cx=\"86\" cy=\"66\" r=\"6\" fill=\"#FF8A80\" opacity=\"0.7\"/></svg>"),
+    pig: ("<svg viewBox=\"0 0 120 120\"><polygon points=\"28,28 46,34 32,50\" fill=\"#F48FB1\"/><polygon points=\"92,28 74,34 88,50\" fill=\"#F48FB1\"/><circle cx=\"60\" cy=\"64\" r=\"36\" fill=\"#F8BBD0\" stroke=\"#F06292\" stroke-width=\"4\"/><ellipse cx=\"60\" cy=\"68\" rx=\"15\" ry=\"11\" fill=\"#F06292\"/><circle cx=\"55\" cy=\"68\" r=\"3\" fill=\"#880E4F\"/><circle cx=\"65\" cy=\"68\" r=\"3\" fill=\"#880E4F\"/><circle cx=\"44\" cy=\"52\" r=\"4.5\" fill=\"#3E2723\"/><circle cx=\"76\" cy=\"52\" r=\"4.5\" fill=\"#3E2723\"/></svg>"),
+    cat: ("<svg viewBox=\"0 0 120 120\"><polygon points=\"26,26 48,38 28,56\" fill=\"#FFB74D\"/><polygon points=\"94,26 72,38 92,56\" fill=\"#FFB74D\"/><circle cx=\"60\" cy=\"66\" r=\"34\" fill=\"#FFE082\" stroke=\"#FFA000\" stroke-width=\"4\"/><circle cx=\"46\" cy=\"58\" r=\"4.5\" fill=\"#3E2723\"/><circle cx=\"74\" cy=\"58\" r=\"4.5\" fill=\"#3E2723\"/><polygon points=\"60,64 55,70 65,70\" fill=\"#EC407A\"/><line x1=\"20\" y1=\"64\" x2=\"38\" y2=\"66\" stroke=\"#8D6E63\" stroke-width=\"3\"/><line x1=\"20\" y1=\"72\" x2=\"38\" y2=\"71\" stroke=\"#8D6E63\" stroke-width=\"3\"/><line x1=\"82\" y1=\"66\" x2=\"100\" y2=\"64\" stroke=\"#8D6E63\" stroke-width=\"3\"/><line x1=\"82\" y1=\"71\" x2=\"100\" y2=\"72\" stroke=\"#8D6E63\" stroke-width=\"3\"/></svg>"),
+    dog: ("<svg viewBox=\"0 0 120 120\"><ellipse cx=\"26\" cy=\"56\" rx=\"12\" ry=\"22\" transform=\"rotate(15 26 56)\" fill=\"#8D6E63\"/><ellipse cx=\"94\" cy=\"56\" rx=\"12\" ry=\"22\" transform=\"rotate(-15 94 56)\" fill=\"#8D6E63\"/><circle cx=\"60\" cy=\"62\" r=\"34\" fill=\"#FFE0B2\" stroke=\"#8D6E63\" stroke-width=\"4\"/><circle cx=\"46\" cy=\"54\" r=\"4.5\" fill=\"#3E2723\"/><circle cx=\"74\" cy=\"54\" r=\"4.5\" fill=\"#3E2723\"/><ellipse cx=\"60\" cy=\"64\" rx=\"7\" ry=\"5\" fill=\"#3E2723\"/><path d=\"M56 72 Q60 82 64 72\" fill=\"#EF5350\"/></svg>"),
+    tiger: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"34\" cy=\"34\" r=\"12\" fill=\"#FF9800\"/><circle cx=\"86\" cy=\"34\" r=\"12\" fill=\"#FF9800\"/><circle cx=\"60\" cy=\"64\" r=\"36\" fill=\"#FFB74D\" stroke=\"#F57C00\" stroke-width=\"4\"/><path d=\"M52 30 H68 M56 38 H64 M26 58 H36 M84 58 H94\" stroke=\"#3E2723\" stroke-width=\"4\" stroke-linecap=\"round\"/><circle cx=\"46\" cy=\"56\" r=\"4.5\" fill=\"#3E2723\"/><circle cx=\"74\" cy=\"56\" r=\"4.5\" fill=\"#3E2723\"/><ellipse cx=\"60\" cy=\"68\" rx=\"12\" ry=\"9\" fill=\"#FFF8E1\"/></svg>"),
+    penguin: ("<svg viewBox=\"0 0 120 120\"><ellipse cx=\"60\" cy=\"64\" rx=\"34\" ry=\"40\" fill=\"#37474F\"/><ellipse cx=\"60\" cy=\"70\" rx=\"22\" ry=\"28\" fill=\"#FFFFFF\"/><circle cx=\"48\" cy=\"48\" r=\"4.5\" fill=\"#263238\"/><circle cx=\"72\" cy=\"48\" r=\"4.5\" fill=\"#263238\"/><polygon points=\"60,52 52,60 68,60\" fill=\"#FFA000\"/><ellipse cx=\"44\" cy=\"102\" rx=\"10\" ry=\"5\" fill=\"#FFA000\"/><ellipse cx=\"76\" cy=\"102\" rx=\"10\" ry=\"5\" fill=\"#FFA000\"/></svg>"),
+    turtle: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"94\" cy=\"62\" r=\"14\" fill=\"#81C784\"/><path d=\"M22 72 C22 36 82 36 82 72 Z\" fill=\"#388E3C\" stroke=\"#1B5E20\" stroke-width=\"4\"/><rect x=\"30\" y=\"72\" width=\"12\" height=\"16\" rx=\"5\" fill=\"#81C784\"/><rect x=\"62\" y=\"72\" width=\"12\" height=\"16\" rx=\"5\" fill=\"#81C784\"/><circle cx=\"98\" cy=\"58\" r=\"3\" fill=\"#263238\"/></svg>"),
+    strawberry: ("<svg viewBox=\"0 0 120 120\"><path d=\"M60 98 C34 86 26 52 38 36 C48 26 72 26 82 36 C94 52 86 86 60 98 Z\" fill=\"#E53935\" stroke=\"#C62828\" stroke-width=\"4\"/><polygon points=\"60,20 44,36 60,32 76,36\" fill=\"#43A047\" stroke=\"#2E7D32\" stroke-width=\"3\"/><circle cx=\"48\" cy=\"52\" r=\"2.5\" fill=\"#FFF59D\"/><circle cx=\"72\" cy=\"52\" r=\"2.5\" fill=\"#FFF59D\"/><circle cx=\"60\" cy=\"66\" r=\"2.5\" fill=\"#FFF59D\"/><circle cx=\"50\" cy=\"76\" r=\"2.5\" fill=\"#FFF59D\"/><circle cx=\"70\" cy=\"76\" r=\"2.5\" fill=\"#FFF59D\"/></svg>"),
+    carrot: ("<svg viewBox=\"0 0 120 120\"><path d=\"M60 100 L38 40 C38 30 82 30 82 40 Z\" fill=\"#FF7043\" stroke=\"#D84315\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M60 32 Q50 14 42 20 M60 32 Q60 12 60 14 M60 32 Q70 14 78 20\" stroke=\"#43A047\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/><line x1=\"48\" y1=\"54\" x2=\"64\" y2=\"54\" stroke=\"#D84315\" stroke-width=\"3\" stroke-linecap=\"round\"/><line x1=\"52\" y1=\"70\" x2=\"68\" y2=\"70\" stroke=\"#D84315\" stroke-width=\"3\" stroke-linecap=\"round\"/></svg>"),
+    bread: ("<svg viewBox=\"0 0 120 120\"><path d=\"M26 52 C20 34 40 24 60 24 C80 24 100 34 94 52 L90 92 H30 Z\" fill=\"#FFB74D\" stroke=\"#E65100\" stroke-width=\"4\" stroke-linejoin=\"round\"/><rect x=\"38\" y=\"42\" width=\"44\" height=\"40\" rx=\"8\" fill=\"#FFF3E0\"/></svg>"),
+    pizza: ("<svg viewBox=\"0 0 120 120\"><polygon points=\"60,20 22,94 98,94\" fill=\"#FFD54F\" stroke=\"#F57C00\" stroke-width=\"5\" stroke-linejoin=\"round\"/><path d=\"M20 92 Q60 104 100 92\" stroke=\"#D84315\" stroke-width=\"9\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"60\" cy=\"56\" r=\"7\" fill=\"#E53935\"/><circle cx=\"48\" cy=\"76\" r=\"7\" fill=\"#E53935\"/><circle cx=\"72\" cy=\"76\" r=\"7\" fill=\"#E53935\"/></svg>"),
+    cheese: ("<svg viewBox=\"0 0 120 120\"><polygon points=\"20,56 76,26 100,56\" fill=\"#FFF176\" stroke=\"#FBC02D\" stroke-width=\"4\" stroke-linejoin=\"round\"/><rect x=\"20\" y=\"56\" width=\"80\" height=\"36\" rx=\"4\" fill=\"#FFD54F\" stroke=\"#FBC02D\" stroke-width=\"4\"/><circle cx=\"42\" cy=\"72\" r=\"7\" fill=\"#F57F17\"/><circle cx=\"74\" cy=\"76\" r=\"5\" fill=\"#F57F17\"/><circle cx=\"62\" cy=\"64\" r=\"4\" fill=\"#F57F17\"/></svg>"),
+    juice: ("<svg viewBox=\"0 0 120 120\"><path d=\"M68 18 L58 40\" stroke=\"#EF5350\" stroke-width=\"6\" stroke-linecap=\"round\"/><path d=\"M34 40 H86 L80 98 H40 Z\" fill=\"#FFF3E0\" stroke=\"#FFB74D\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M37 56 H83 L79 94 H41 Z\" fill=\"#FFA726\"/></svg>"),
+    airplane: ("<svg viewBox=\"0 0 120 120\"><path d=\"M18 64 L102 36 L86 84 L58 72 L42 88 L42 68 Z\" fill=\"#4FC3F7\" stroke=\"#0288D1\" stroke-width=\"4\" stroke-linejoin=\"round\"/></svg>"),
+    ship: ("<svg viewBox=\"0 0 120 120\"><polygon points=\"60,20 60,64 94,64\" fill=\"#FF8A65\"/><polygon points=\"54,28 54,64 26,64\" fill=\"#FFD54F\"/><polygon points=\"18,68 102,68 86,94 34,94\" fill=\"#5D4037\"/><path d=\"M14 96 Q36 88 60 96 T106 96\" stroke=\"#29B6F6\" stroke-width=\"6\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    umbrella: ("<svg viewBox=\"0 0 120 120\"><path d=\"M16 62 C16 26 104 26 104 62 Z\" fill=\"#EC407A\" stroke=\"#C2185B\" stroke-width=\"4\"/><path d=\"M60 62 V92 C60 100 48 100 48 92\" stroke=\"#5D4037\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    clock: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"60\" cy=\"60\" r=\"40\" fill=\"#FFF9C4\" stroke=\"#29B6F6\" stroke-width=\"6\"/><line x1=\"60\" y1=\"60\" x2=\"60\" y2=\"36\" stroke=\"#37474F\" stroke-width=\"5\" stroke-linecap=\"round\"/><line x1=\"60\" y1=\"60\" x2=\"78\" y2=\"60\" stroke=\"#E53935\" stroke-width=\"5\" stroke-linecap=\"round\"/><circle cx=\"60\" cy=\"60\" r=\"4\" fill=\"#37474F\"/></svg>"),
+    rainbow: ("<svg viewBox=\"0 0 120 120\"><path d=\"M18 84 A42 42 0 0 1 102 84\" stroke=\"#EF5350\" stroke-width=\"8\" fill=\"none\"/><path d=\"M26 84 A34 34 0 0 1 94 84\" stroke=\"#FFCA28\" stroke-width=\"8\" fill=\"none\"/><path d=\"M34 84 A26 26 0 0 1 86 84\" stroke=\"#66BB6A\" stroke-width=\"8\" fill=\"none\"/><path d=\"M42 84 A18 18 0 0 1 78 84\" stroke=\"#29B6F6\" stroke-width=\"8\" fill=\"none\"/></svg>"),
+    book: ("<svg viewBox=\"0 0 120 120\"><path d=\"M18 32 Q40 26 60 34 V92 Q40 84 18 90 Z\" fill=\"#FFF8E1\" stroke=\"#FFA000\" stroke-width=\"4\"/><path d=\"M102 32 Q80 26 60 34 V92 Q80 84 102 90 Z\" fill=\"#FFF8E1\" stroke=\"#FFA000\" stroke-width=\"4\"/></svg>"),
+    pencil: ("<svg viewBox=\"0 0 120 120\"><polygon points=\"24,96 36,68 52,84\" fill=\"#FFE0B2\" stroke=\"#5D4037\" stroke-width=\"3\"/><rect x=\"44\" y=\"32\" width=\"44\" height=\"24\" transform=\"rotate(-45 66 44)\" fill=\"#FFD54F\" stroke=\"#F57F17\" stroke-width=\"4\"/><polygon points=\"24,96 29,84 36,91\" fill=\"#3E2723\"/></svg>"),
+    glasses: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"36\" cy=\"64\" r=\"18\" fill=\"#E1F5FE\" stroke=\"#37474F\" stroke-width=\"5\"/><circle cx=\"84\" cy=\"64\" r=\"18\" fill=\"#E1F5FE\" stroke=\"#37474F\" stroke-width=\"5\"/><line x1=\"54\" y1=\"64\" x2=\"66\" y2=\"64\" stroke=\"#37474F\" stroke-width=\"5\"/></svg>"),
+    shoes: ("<svg viewBox=\"0 0 120 120\"><path d=\"M22 52 H56 L72 68 H96 C102 68 102 88 94 88 H22 Z\" fill=\"#EF5350\" stroke=\"#C62828\" stroke-width=\"4\" stroke-linejoin=\"round\"/><rect x=\"20\" y=\"84\" width=\"80\" height=\"8\" rx=\"4\" fill=\"#FFFFFF\"/></svg>"),
+    gift: ("<svg viewBox=\"0 0 120 120\"><rect x=\"26\" y=\"46\" width=\"68\" height=\"52\" rx=\"6\" fill=\"#FF7043\" stroke=\"#D84315\" stroke-width=\"4\"/><rect x=\"22\" y=\"34\" width=\"76\" height=\"16\" rx=\"4\" fill=\"#FF8A65\" stroke=\"#D84315\" stroke-width=\"4\"/><rect x=\"54\" y=\"34\" width=\"12\" height=\"64\" fill=\"#FFD54F\"/><path d=\"M60 34 C42 16 32 34 60 34 C88 34 78 16 60 34 Z\" fill=\"#FFD54F\" stroke=\"#FFA000\" stroke-width=\"3\"/></svg>"),
+    robot: ("<svg viewBox=\"0 0 120 120\"><line x1=\"60\" y1=\"16\" x2=\"60\" y2=\"32\" stroke=\"#546E7A\" stroke-width=\"5\"/><circle cx=\"60\" cy=\"14\" r=\"6\" fill=\"#FF5252\"/><rect x=\"30\" y=\"32\" width=\"60\" height=\"48\" rx=\"10\" fill=\"#90A4AE\" stroke=\"#455A64\" stroke-width=\"4\"/><circle cx=\"46\" cy=\"52\" r=\"7\" fill=\"#FFF59D\"/><circle cx=\"74\" cy=\"52\" r=\"7\" fill=\"#FFF59D\"/><rect x=\"42\" y=\"66\" width=\"36\" height=\"6\" rx=\"3\" fill=\"#37474F\"/></svg>"),
+    mountain: ("<svg viewBox=\"0 0 120 120\"><polygon points=\"12,94 52,28 92,94\" fill=\"#66BB6A\" stroke=\"#2E7D32\" stroke-width=\"4\" stroke-linejoin=\"round\"/><polygon points=\"48,94 80,42 110,94\" fill=\"#81C784\" stroke=\"#388E3C\" stroke-width=\"4\" stroke-linejoin=\"round\"/></svg>"),
+    bee: ("<svg viewBox=\"0 0 120 120\"><ellipse cx=\"52\" cy=\"36\" rx=\"12\" ry=\"18\" fill=\"#E1F5FE\" stroke=\"#81D4FA\" stroke-width=\"3\"/><ellipse cx=\"68\" cy=\"36\" rx=\"12\" ry=\"18\" fill=\"#E1F5FE\" stroke=\"#81D4FA\" stroke-width=\"3\"/><ellipse cx=\"60\" cy=\"64\" rx=\"32\" ry=\"22\" fill=\"#FFD54F\" stroke=\"#3E2723\" stroke-width=\"4\"/><line x1=\"50\" y1=\"44\" x2=\"50\" y2=\"84\" stroke=\"#3E2723\" stroke-width=\"6\"/><line x1=\"68\" y1=\"44\" x2=\"68\" y2=\"84\" stroke=\"#3E2723\" stroke-width=\"6\"/><circle cx=\"38\" cy=\"60\" r=\"4\" fill=\"#3E2723\"/></svg>"),
+    dinosaur: ("<svg viewBox=\"0 0 120 120\"><path d=\"M30 88 V44 C30 26 62 26 62 44 V60 H88 C96 60 96 88 84 88 Z\" fill=\"#66BB6A\" stroke=\"#2E7D32\" stroke-width=\"4\" stroke-linejoin=\"round\"/><circle cx=\"44\" cy=\"40\" r=\"4\" fill=\"#263238\"/></svg>"),
+    giraffe: ("<svg viewBox=\"0 0 120 120\"><rect x=\"48\" y=\"36\" width=\"18\" height=\"62\" rx=\"8\" fill=\"#FFD54F\" stroke=\"#F57F17\" stroke-width=\"3\"/><ellipse cx=\"60\" cy=\"34\" rx=\"18\" ry=\"12\" fill=\"#FFD54F\" stroke=\"#F57F17\" stroke-width=\"3\"/><circle cx=\"56\" cy=\"56\" r=\"4\" fill=\"#8D6E63\"/><circle cx=\"54\" cy=\"76\" r=\"5\" fill=\"#8D6E63\"/><circle cx=\"64\" cy=\"32\" r=\"3\" fill=\"#3E2723\"/></svg>"),
+    mushroom: ("<svg viewBox=\"0 0 120 120\"><rect x=\"46\" y=\"58\" width=\"28\" height=\"38\" rx=\"10\" fill=\"#FFF8E1\" stroke=\"#D7CCC8\" stroke-width=\"4\"/><path d=\"M20 62 C20 22 100 22 100 62 Z\" fill=\"#EF5350\" stroke=\"#C62828\" stroke-width=\"4\"/><circle cx=\"44\" cy=\"44\" r=\"7\" fill=\"#FFFFFF\"/><circle cx=\"74\" cy=\"40\" r=\"6\" fill=\"#FFFFFF\"/><circle cx=\"60\" cy=\"52\" r=\"5\" fill=\"#FFFFFF\"/></svg>"),
+    corn: ("<svg viewBox=\"0 0 120 120\"><ellipse cx=\"60\" cy=\"56\" rx=\"20\" ry=\"34\" fill=\"#FFD54F\" stroke=\"#FBC02D\" stroke-width=\"4\"/><path d=\"M40 64 Q26 84 56 94 Z\" fill=\"#66BB6A\" stroke=\"#2E7D32\" stroke-width=\"3\"/><path d=\"M80 64 Q94 84 64 94 Z\" fill=\"#66BB6A\" stroke=\"#2E7D32\" stroke-width=\"3\"/></svg>"),
+    elephant: ("<svg viewBox=\"0 0 120 120\"><ellipse cx=\"28\" cy=\"58\" rx=\"18\" ry=\"26\" fill=\"#90A4AE\" stroke=\"#607D8B\" stroke-width=\"4\"/><ellipse cx=\"92\" cy=\"58\" rx=\"18\" ry=\"26\" fill=\"#90A4AE\" stroke=\"#607D8B\" stroke-width=\"4\"/><circle cx=\"60\" cy=\"56\" r=\"30\" fill=\"#B0BEC5\" stroke=\"#607D8B\" stroke-width=\"4\"/><path d=\"M54 62 V88 C54 96 68 96 68 86\" stroke=\"#607D8B\" stroke-width=\"12\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M54 62 V88 C54 96 68 96 68 86\" stroke=\"#B0BEC5\" stroke-width=\"7\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"46\" cy=\"50\" r=\"4\" fill=\"#263238\"/><circle cx=\"74\" cy=\"50\" r=\"4\" fill=\"#263238\"/></svg>"),
+    caterpillar: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"88\" cy=\"72\" r=\"14\" fill=\"#81C784\" stroke=\"#388E3C\" stroke-width=\"3\"/><circle cx=\"68\" cy=\"68\" r=\"15\" fill=\"#66BB6A\" stroke=\"#388E3C\" stroke-width=\"3\"/><circle cx=\"48\" cy=\"70\" r=\"16\" fill=\"#81C784\" stroke=\"#388E3C\" stroke-width=\"3\"/><circle cx=\"30\" cy=\"56\" r=\"18\" fill=\"#66BB6A\" stroke=\"#388E3C\" stroke-width=\"3\"/><circle cx=\"24\" cy=\"52\" r=\"3.5\" fill=\"#263238\"/><circle cx=\"36\" cy=\"52\" r=\"3.5\" fill=\"#263238\"/><path d=\"M24 38 Q18 26 14 30 M34 38 Q40 26 44 30\" stroke=\"#388E3C\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    waffle: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"60\" cy=\"60\" r=\"40\" fill=\"#FFB74D\" stroke=\"#E65100\" stroke-width=\"5\"/><line x1=\"36\" y1=\"28\" x2=\"36\" y2=\"92\" stroke=\"#E65100\" stroke-width=\"4\"/><line x1=\"60\" y1=\"20\" x2=\"60\" y2=\"100\" stroke=\"#E65100\" stroke-width=\"4\"/><line x1=\"84\" y1=\"28\" x2=\"84\" y2=\"92\" stroke=\"#E65100\" stroke-width=\"4\"/><line x1=\"28\" y1=\"36\" x2=\"92\" y2=\"36\" stroke=\"#E65100\" stroke-width=\"4\"/><line x1=\"20\" y1=\"60\" x2=\"100\" y2=\"60\" stroke=\"#E65100\" stroke-width=\"4\"/><line x1=\"28\" y1=\"84\" x2=\"92\" y2=\"84\" stroke=\"#E65100\" stroke-width=\"4\"/><rect x=\"50\" y=\"50\" width=\"20\" height=\"20\" rx=\"4\" fill=\"#FFF59D\"/></svg>"),
+    alien: ("<svg viewBox=\"0 0 120 120\"><line x1=\"60\" y1=\"16\" x2=\"60\" y2=\"34\" stroke=\"#66BB6A\" stroke-width=\"5\"/><circle cx=\"60\" cy=\"14\" r=\"7\" fill=\"#AED581\"/><ellipse cx=\"60\" cy=\"64\" rx=\"36\" ry=\"30\" fill=\"#81C784\" stroke=\"#388E3C\" stroke-width=\"4\"/><circle cx=\"42\" cy=\"58\" r=\"7\" fill=\"#FFFFFF\"/><circle cx=\"60\" cy=\"54\" r=\"7\" fill=\"#FFFFFF\"/><circle cx=\"78\" cy=\"58\" r=\"7\" fill=\"#FFFFFF\"/><circle cx=\"42\" cy=\"58\" r=\"3\" fill=\"#263238\"/><circle cx=\"60\" cy=\"54\" r=\"3\" fill=\"#263238\"/><circle cx=\"78\" cy=\"58\" r=\"3\" fill=\"#263238\"/><path d=\"M46 74 Q60 84 74 74\" stroke=\"#1B5E20\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    monkey: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"24\" cy=\"58\" r=\"14\" fill=\"#8D6E63\"/><circle cx=\"96\" cy=\"58\" r=\"14\" fill=\"#8D6E63\"/><circle cx=\"24\" cy=\"58\" r=\"8\" fill=\"#FFCCBC\"/><circle cx=\"96\" cy=\"58\" r=\"8\" fill=\"#FFCCBC\"/><circle cx=\"60\" cy=\"58\" r=\"32\" fill=\"#8D6E63\"/><ellipse cx=\"60\" cy=\"68\" rx=\"22\" ry=\"16\" fill=\"#FFCCBC\"/><circle cx=\"48\" cy=\"52\" r=\"4\" fill=\"#3E2723\"/><circle cx=\"72\" cy=\"52\" r=\"4\" fill=\"#3E2723\"/><path d=\"M50 72 Q60 80 70 72\" stroke=\"#5D4037\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    fishbowl: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"60\" cy=\"64\" r=\"38\" fill=\"#E1F5FE\" stroke=\"#29B6F6\" stroke-width=\"4\"/><path d=\"M24 58 Q60 66 96 58 A38 38 0 0 1 24 58 Z\" fill=\"#81D4FA\"/><ellipse cx=\"56\" cy=\"72\" rx=\"14\" ry=\"9\" fill=\"#FF7043\"/><polygon points=\"70,72 82,64 82,80\" fill=\"#FF7043\"/><circle cx=\"48\" cy=\"70\" r=\"2.5\" fill=\"#263238\"/><rect x=\"38\" y=\"22\" width=\"44\" height=\"8\" rx=\"4\" fill=\"#29B6F6\"/></svg>"),
+    stroller: ("<svg viewBox=\"0 0 120 120\"><path d=\"M30 56 H86 C86 80 30 80 30 56 Z\" fill=\"#F48FB1\" stroke=\"#C2185B\" stroke-width=\"4\"/><path d=\"M58 56 V28 C78 28 86 40 86 56 Z\" fill=\"#F8BBD0\" stroke=\"#C2185B\" stroke-width=\"4\"/><path d=\"M30 56 L20 38 H12\" stroke=\"#546E7A\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"42\" cy=\"88\" r=\"11\" fill=\"#37474F\" stroke=\"#ECEFF1\" stroke-width=\"3\"/><circle cx=\"76\" cy=\"88\" r=\"11\" fill=\"#37474F\" stroke=\"#ECEFF1\" stroke-width=\"3\"/></svg>"),
+    tooth: ("<svg viewBox=\"0 0 120 120\"><path d=\"M34 32 C24 32 22 58 30 78 C34 90 42 96 48 82 C54 70 66 70 72 82 C78 96 86 90 90 78 C98 58 96 32 86 32 C74 32 68 38 60 38 C52 38 46 32 34 32 Z\" fill=\"#FFFFFF\" stroke=\"#90CAF9\" stroke-width=\"5\" stroke-linejoin=\"round\"/><circle cx=\"48\" cy=\"52\" r=\"3.5\" fill=\"#37474F\"/><circle cx=\"72\" cy=\"52\" r=\"3.5\" fill=\"#37474F\"/><path d=\"M52 60 Q60 66 68 60\" stroke=\"#37474F\" stroke-width=\"3.5\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    trophy: ("<svg viewBox=\"0 0 120 120\"><path d=\"M36 26 H84 V54 C84 74 36 74 36 54 Z\" fill=\"#FFD54F\" stroke=\"#FFA000\" stroke-width=\"4\"/><path d=\"M36 34 H22 C22 52 30 56 36 54 M84 34 H98 C98 52 90 56 84 54\" stroke=\"#FFA000\" stroke-width=\"5\" fill=\"none\"/><rect x=\"54\" y=\"70\" width=\"12\" height=\"18\" fill=\"#FFA000\"/><rect x=\"38\" y=\"88\" width=\"44\" height=\"10\" rx=\"4\" fill=\"#8D6E63\"/></svg>"),
+    seed: ("<svg viewBox=\"0 0 120 120\"><path d=\"M20 92 Q60 82 100 92\" stroke=\"#8D6E63\" stroke-width=\"8\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"60\" cy=\"82\" rx=\"12\" ry=\"8\" fill=\"#6D4C41\"/><path d=\"M60 76 V42\" stroke=\"#43A047\" stroke-width=\"6\" stroke-linecap=\"round\"/><path d=\"M60 52 C40 52 34 32 54 32 C58 32 60 44 60 52 Z\" fill=\"#66BB6A\"/><path d=\"M60 52 C80 52 86 32 66 32 C62 32 60 44 60 52 Z\" fill=\"#81C784\"/></svg>"),
+    acorn: ("<svg viewBox=\"0 0 120 120\"><path d=\"M34 52 C34 86 60 98 60 98 C60 98 86 86 86 52 Z\" fill=\"#D78B48\" stroke=\"#8D6E63\" stroke-width=\"4\"/><path d=\"M28 52 C28 32 92 32 92 52 Z\" fill=\"#6D4C41\" stroke=\"#4E342E\" stroke-width=\"4\"/><path d=\"M60 34 V20\" stroke=\"#4E342E\" stroke-width=\"6\" stroke-linecap=\"round\"/></svg>"),
+    kiwi: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"60\" cy=\"60\" r=\"38\" fill=\"#8D6E63\"/><circle cx=\"60\" cy=\"60\" r=\"32\" fill=\"#9CCC65\"/><circle cx=\"60\" cy=\"60\" r=\"14\" fill=\"#F1F8E9\"/><circle cx=\"60\" cy=\"40\" r=\"2.5\" fill=\"#263238\"/><circle cx=\"76\" cy=\"48\" r=\"2.5\" fill=\"#263238\"/><circle cx=\"76\" cy=\"72\" r=\"2.5\" fill=\"#263238\"/><circle cx=\"60\" cy=\"80\" r=\"2.5\" fill=\"#263238\"/><circle cx=\"44\" cy=\"72\" r=\"2.5\" fill=\"#263238\"/><circle cx=\"44\" cy=\"48\" r=\"2.5\" fill=\"#263238\"/></svg>"),
+    owl: ("<svg viewBox=\"0 0 120 120\"><ellipse cx=\"60\" cy=\"66\" rx=\"34\" ry=\"36\" fill=\"#8D6E63\" stroke=\"#5D4037\" stroke-width=\"4\"/><polygon points=\"32,36 44,44 30,52\" fill=\"#5D4037\"/><polygon points=\"88,36 76,44 90,52\" fill=\"#5D4037\"/><circle cx=\"46\" cy=\"56\" r=\"13\" fill=\"#FFF8E1\"/><circle cx=\"74\" cy=\"56\" r=\"13\" fill=\"#FFF8E1\"/><circle cx=\"46\" cy=\"56\" r=\"5\" fill=\"#263238\"/><circle cx=\"74\" cy=\"56\" r=\"5\" fill=\"#263238\"/><polygon points=\"60,60 54,70 66,70\" fill=\"#FFA000\"/></svg>"),
+    cooking: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"52\" cy=\"62\" r=\"34\" fill=\"#37474F\" stroke=\"#263238\" stroke-width=\"4\"/><rect x=\"82\" y=\"56\" width=\"28\" height=\"10\" rx=\"5\" fill=\"#FF7043\" stroke=\"#D84315\" stroke-width=\"3\"/><ellipse cx=\"52\" cy=\"62\" rx=\"22\" ry=\"20\" fill=\"#FFFFFF\"/><circle cx=\"52\" cy=\"62\" r=\"10\" fill=\"#FFB300\"/></svg>"),
+    sweetpotato: ("<svg viewBox=\"0 0 120 120\"><ellipse cx=\"60\" cy=\"62\" rx=\"38\" ry=\"22\" transform=\"rotate(-25 60 62)\" fill=\"#8E24AA\" stroke=\"#6A1B9A\" stroke-width=\"4\"/><ellipse cx=\"72\" cy=\"56\" rx=\"14\" ry=\"12\" fill=\"#FFD54F\" stroke=\"#FBC02D\" stroke-width=\"3\"/></svg>"),
+    dress_shoes: ("<svg viewBox=\"0 0 120 120\"><path d=\"M20 56 C20 82 36 88 96 88 C102 88 102 68 88 68 C68 68 62 78 44 74 C36 72 34 56 20 56 Z\" fill=\"#EC407A\" stroke=\"#C2185B\" stroke-width=\"4\"/><circle cx=\"84\" cy=\"66\" r=\"7\" fill=\"#FFD54F\" stroke=\"#F57F17\" stroke-width=\"2\"/></svg>"),
+    head: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"60\" cy=\"64\" r=\"30\" fill=\"#FFE0B2\" stroke=\"#5D4037\" stroke-width=\"3\"/><path d=\"M28 60 C28 24 92 24 92 60 C84 42 36 42 28 60 Z\" fill=\"#3E2723\"/><path d=\"M84 26 L98 20 M88 36 L102 34\" stroke=\"#FF7043\" stroke-width=\"4\" stroke-linecap=\"round\"/></svg>"),
+    kid: ("<svg viewBox=\"0 0 120 120\"><circle cx=\"60\" cy=\"64\" r=\"28\" fill=\"#FFE0B2\" stroke=\"#5D4037\" stroke-width=\"3\"/><path d=\"M30 52 C30 26 90 26 90 52 Z\" fill=\"#29B6F6\" stroke=\"#0288D1\" stroke-width=\"3\"/><rect x=\"54\" y=\"46\" width=\"44\" height=\"8\" rx=\"4\" fill=\"#0288D1\"/><circle cx=\"48\" cy=\"62\" r=\"3.5\" fill=\"#3E2723\"/><circle cx=\"72\" cy=\"62\" r=\"3.5\" fill=\"#3E2723\"/><path d=\"M50 74 Q60 82 70 74\" stroke=\"#5D4037\" stroke-width=\"3.5\" fill=\"none\" stroke-linecap=\"round\"/></svg>"),
+    cabbage: ("<svg viewBox=\"0 0 120 120\"><path d=\"M40 94 C26 70 26 30 48 26 C56 24 64 24 72 26 C94 30 94 70 80 94 Z\" fill=\"#81C784\" stroke=\"#388E3C\" stroke-width=\"4\"/><path d=\"M44 94 C40 66 80 66 76 94 Z\" fill=\"#FFF9C4\" stroke=\"#AED581\" stroke-width=\"3\"/><path d=\"M60 32 V88\" stroke=\"#F1F8E9\" stroke-width=\"5\" stroke-linecap=\"round\"/></svg>")
   };
 
   // 단계별 메타 정보
-  const STAGE_META = {
+  var STAGE_META = {
     1: { id: 1, title: "1단계 · 모음 놀이터", short: "ㅏ·ㅑ·ㅓ·ㅕ·ㅗ", desc: "첫소리가 모음과 똑같은 낱말로 쉽게 배워요!" },
     2: { id: 2, title: "2단계 · 자음 놀이터", short: "ㄱ·ㄴ·ㄷ·ㄹ·ㅁ", desc: "단어의 첫 글자 자음 친구들을 찾아봐요!" },
     3: { id: 3, title: "3단계 · 글자 합체", short: "가·나·다·고·구", desc: "자음과 모음이 만난 첫 글자를 맞춰봐요!" },
@@ -120,7 +294,7 @@ window.HG = window.HG || {};
     5: { id: 5, title: "5단계 · 받침 낱말", short: "구름·강아지·선물", desc: "받침이 있는 다양한 낱말까지 척척 읽고 써요!" }
   };
 
-  const CURRICULUM = {
+  var CURRICULUM = {
     // 1단계(모음): 모든 단어의 첫 글자가 'ㅇ + 해당 모음'(받침 없음)으로 100% 일치!
     1: [
       { char: "ㅏ", tts: "아", word: "아이", hint: "아이 할 때 첫소리, 아!", icon: "child", jamo: ["ㅇ", "ㅏ"], buildTarget: "아" },
@@ -302,7 +476,7 @@ window.HG = window.HG || {};
   };
 
   // 스티커북 보상 카탈로그 (25종)
-  const STICKER_CATALOG = [
+  var STICKER_CATALOG = [
     { id: "stk_bear", name: "춤추는 보리", desc: "으쌰으쌰 신나게 춤추는 아기곰 보리!", icon: "bear" },
     { id: "stk_rabbit", name: "깡충 분홍토끼", desc: "귀가 쫑긋! 당근을 좋아하는 토끼 친구", icon: "rabbit" },
     { id: "stk_lion", name: "멋쟁이 사자왕", desc: "황금빛 갈기가 멋진 용감한 사자!", icon: "lion" },
@@ -330,34 +504,34 @@ window.HG = window.HG || {};
     { id: "stk_strawberry", name: "새콤달콤 딸기", desc: "향이 솔솔 나는 빨간 딸기", icon: "strawberry" }
   ];
 
-  const CHOSUNG_LIST = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
-  const JUNGSUNG_LIST = ["ㅏ","ㅐ","ㅑ","ㅒ","ㅓ","ㅔ","ㅕ","ㅖ","ㅗ","ㅘ","ㅙ","ㅚ","ㅛ","ㅜ","ㅝ","ㅞ","ㅟ","ㅠ","ㅡ","ㅢ","ㅣ"];
-  const JONGSUNG_LIST = ["","ㄱ","ㄲ","ㄳ","ㄴ","ㄵ","ㄶ","ㄷ","ㄹ","ㄺ","ㄻ","ㄼ","ㄽ","ㄾ","ㄿ","ㅀ","ㅁ","ㅂ","ㅄ","ㅅ","ㅆ","ㅇ","ㅈ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+  var CHOSUNG_LIST = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+  var JUNGSUNG_LIST = ["ㅏ","ㅐ","ㅑ","ㅒ","ㅓ","ㅔ","ㅕ","ㅖ","ㅗ","ㅘ","ㅙ","ㅚ","ㅛ","ㅜ","ㅝ","ㅞ","ㅟ","ㅠ","ㅡ","ㅢ","ㅣ"];
+  var JONGSUNG_LIST = ["","ㄱ","ㄲ","ㄳ","ㄴ","ㄵ","ㄶ","ㄷ","ㄹ","ㄺ","ㄻ","ㄼ","ㄽ","ㄾ","ㄿ","ㅀ","ㅁ","ㅂ","ㅄ","ㅅ","ㅆ","ㅇ","ㅈ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
 
-  const deckState = {};
+  var deckState = {};
 
   function shuffleArray(arr) {
-    const copy = arr.slice();
-    for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
+    var copy = arr.slice();
+    for (var i = copy.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var _tmp = copy[i]; copy[i] = copy[j]; copy[j] = _tmp;
     }
     return copy;
   }
 
   function drawNextItem(stageNum, gameKey = "default") {
-    const pool = getStageItems(stageNum);
-    const key = `${stageNum}_${gameKey}`;
+    var pool = getStageItems(stageNum);
+    var key = ((stageNum) + "_" + (gameKey));
 
     if (!deckState[key] || deckState[key].queue.length === 0) {
-      let shuffled = shuffleArray(pool);
+      var shuffled = shuffleArray(pool);
       if (
         deckState[key] &&
         deckState[key].lastChar &&
         shuffled.length > 1 &&
         shuffled[0].char === deckState[key].lastChar
       ) {
-        const temp = shuffled[0];
+        var temp = shuffled[0];
         shuffled[0] = shuffled[shuffled.length - 1];
         shuffled[shuffled.length - 1] = temp;
       }
@@ -367,21 +541,22 @@ window.HG = window.HG || {};
       };
     }
 
-    const nextItem = deckState[key].queue.shift();
+    var nextItem = deckState[key].queue.shift();
     deckState[key].lastChar = nextItem.char;
     return nextItem;
   }
 
-  function combineHangul(cho, jung, jong = "") {
-    const choIdx = CHOSUNG_LIST.indexOf(cho);
-    const jungIdx = JUNGSUNG_LIST.indexOf(jung);
-    const jongIdx = Math.max(0, JONGSUNG_LIST.indexOf(jong || ""));
+  function combineHangul(cho, jung, jong) {
+    if (jong === void 0) jong = "";
+    var choIdx = CHOSUNG_LIST.indexOf(cho);
+    var jungIdx = JUNGSUNG_LIST.indexOf(jung);
+    var jongIdx = Math.max(0, JONGSUNG_LIST.indexOf(jong || ""));
     if (choIdx === -1 || jungIdx === -1) return cho + jung + (jong || "");
-    const code = 0xAC00 + (choIdx * 21 * 28) + (jungIdx * 28) + jongIdx;
+    var code = 0xAC00 + (choIdx * 21 * 28) + (jungIdx * 28) + jongIdx;
     return String.fromCharCode(code);
   }
 
-  let svgUidCounter = 0;
+  var svgUidCounter = 0;
 
   /**
    * 모바일 브라우저(삼성 인터넷 등) 강제 다크모드가 인라인 SVG의 밝은색/어두운색 fill·stroke를
@@ -390,34 +565,34 @@ window.HG = window.HG || {};
    */
   function protectSvgColorsFromDarkFilter(rawSvg) {
     svgUidCounter = (svgUidCounter + 1) % 100000;
-    const prefix = `hg_p_${svgUidCounter}_`;
-    const colorMap = new Map();
-    let idx = 0;
+    var prefix = ("hg_p_" + (svgUidCounter) + "_");
+    var colorMap = new Map();
+    var idx = 0;
 
-    const replaced = rawSvg.replace(
+    var replaced = rawSvg.replace(
       /\b(fill|stroke)="(#[0-9A-Fa-f]{3,6})"/g,
-      (_, attr, hex) => {
-        const norm = hex.toUpperCase();
+      function (_, attr, hex) {
+        var norm = hex.toUpperCase();
         if (!colorMap.has(norm)) {
           idx += 1;
-          colorMap.set(norm, `${prefix}${idx}`);
+          colorMap.set(norm, ((prefix) + (idx)));
         }
-        return `${attr}="url(#${colorMap.get(norm)})"`;
+        return ((attr) + "=\"url(#" + (colorMap.get(norm)) + ")\"");
       }
     );
 
     if (colorMap.size === 0) return rawSvg;
 
-    let defsInner = "";
-    colorMap.forEach((gradId, hex) => {
-      defsInner += `<linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${hex}"/><stop offset="100%" stop-color="${hex}"/></linearGradient>`;
+    var defsInner = "";
+    colorMap.forEach(function (gradId, hex) {
+      defsInner += ("<linearGradient id=\"" + (gradId) + "\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"" + (hex) + "\"/><stop offset=\"100%\" stop-color=\"" + (hex) + "\"/></linearGradient>");
     });
 
-    return replaced.replace(/<svg\b([^>]*)>/, `<svg$1><defs>${defsInner}</defs>`);
+    return replaced.replace(/<svg\b([^>]*)>/, ("<svg$1><defs>" + (defsInner) + "</defs>"));
   }
 
   function getIllustSvg(key) {
-    const raw = SVG_ILLUSTS[key] || SVG_ILLUSTS.star;
+    var raw = SVG_ILLUSTS[key] || SVG_ILLUSTS.star;
     return protectSvgColorsFromDarkFilter(raw);
   }
 
@@ -426,13 +601,13 @@ window.HG = window.HG || {};
   }
 
   HG.Words = {
-    STAGE_META,
-    CURRICULUM,
-    STICKER_CATALOG,
-    SVG_ILLUSTS,
-    combineHangul,
-    getIllustSvg,
-    getStageItems,
-    drawNextItem
+    STAGE_META: STAGE_META,
+    CURRICULUM: CURRICULUM,
+    STICKER_CATALOG: STICKER_CATALOG,
+    SVG_ILLUSTS: SVG_ILLUSTS,
+    combineHangul: combineHangul,
+    getIllustSvg: getIllustSvg,
+    getStageItems: getStageItems,
+    drawNextItem: drawNextItem
   };
 })(window.HG);

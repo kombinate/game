@@ -13,10 +13,10 @@ window.HG = window.HG || {};
 (function (HG) {
   "use strict";
 
-  const STORAGE_KEY = "hangul_playground_state_v1";
-  const REST_LIMIT_SECONDS = 15 * 60; // 15분 (900초)
+  var STORAGE_KEY = "hangul_playground_state_v1";
+  var REST_LIMIT_SECONDS = 15 * 60; // 15분 (900초)
 
-  const defaultState = {
+  var defaultState = {
     currentStage: 1,
     volume: 85,
     speechRate: 0.92,
@@ -27,33 +27,27 @@ window.HG = window.HG || {};
     restTimerEnabled: true
   };
 
-  let state = loadState();
-  let activeGameKey = null;
-  let rewardAutoTimer = null;
+  var state = loadState();
+  var activeGameKey = null;
+  var rewardAutoTimer = null;
 
   // 15분 쉬는 시간 타이머 상태
-  let restRemainingSec = REST_LIMIT_SECONDS;
-  let restIntervalId = null;
+  var restRemainingSec = REST_LIMIT_SECONDS;
+  var restIntervalId = null;
 
   // 부모님 3초 롱프레스 타이머 상태
-  let holdStartTime = 0;
-  let holdAnimFrame = null;
-  const HOLD_DURATION_MS = 3000;
+  var holdStartTime = 0;
+  var holdAnimFrame = null;
+  var HOLD_DURATION_MS = 3000;
 
   function loadState() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { ...defaultState };
-      const parsed = JSON.parse(raw);
-      return {
-        ...defaultState,
-        ...parsed,
-        unlockedStickers: Array.isArray(parsed.unlockedStickers)
-          ? parsed.unlockedStickers
-          : ["stk_bear"]
-      };
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return Object.assign({}, defaultState);
+      var parsed = JSON.parse(raw);
+      return Object.assign({}, defaultState, parsed, { unlockedStickers: Array.isArray(parsed.unlockedStickers) ? parsed.unlockedStickers : ["stk_bear"] });
     } catch (e) {
-      return { ...defaultState };
+      return Object.assign({}, defaultState);
     }
   }
 
@@ -90,14 +84,14 @@ window.HG = window.HG || {};
    * 모바일 터치 오동작 방지 (더블탭 확대, 롱프레스 컨텍스트 메뉴, 고무줄 스크롤 방지)
    */
   function preventMobileTouchGlitches() {
-    document.addEventListener("contextmenu", (e) => e.preventDefault());
-    document.addEventListener("selectstart", (e) => e.preventDefault());
+    document.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    document.addEventListener("selectstart", function (e) { e.preventDefault(); });
 
-    let lastTouchEnd = 0;
+    var lastTouchEnd = 0;
     document.addEventListener(
       "touchend",
-      (e) => {
-        const now = Date.now();
+      function (e) {
+        var now = Date.now();
         if (now - lastTouchEnd <= 300) {
           e.preventDefault();
         }
@@ -106,9 +100,9 @@ window.HG = window.HG || {};
       { passive: false }
     );
 
-    const dismissPortraitBtn = document.getElementById("btn-dismiss-portrait");
+    var dismissPortraitBtn = document.getElementById("btn-dismiss-portrait");
     if (dismissPortraitBtn) {
-      dismissPortraitBtn.addEventListener("click", () => {
+      dismissPortraitBtn.addEventListener("click", function () {
         document.body.classList.add("force-portrait");
         syncViewportMetrics();
       });
@@ -116,7 +110,7 @@ window.HG = window.HG || {};
 
     syncViewportMetrics();
     window.addEventListener("resize", syncViewportMetrics);
-    window.addEventListener("orientationchange", () => {
+    window.addEventListener("orientationchange", function () {
       setTimeout(syncViewportMetrics, 120);
       setTimeout(syncViewportMetrics, 350);
     });
@@ -131,69 +125,86 @@ window.HG = window.HG || {};
    * CSS 변수(--app-width, --app-height)에 실시간 동기화하여 화면 잘림 방지
    */
   function syncViewportMetrics() {
-    const vv = window.visualViewport;
-    const w = Math.round(vv ? vv.width : window.innerWidth);
-    const h = Math.round(vv ? vv.height : window.innerHeight);
-    document.documentElement.style.setProperty("--app-width", `${w}px`);
-    document.documentElement.style.setProperty("--app-height", `${h}px`);
+    var vv = window.visualViewport;
+    var w = Math.round(vv ? vv.width : window.innerWidth || document.documentElement.clientWidth);
+    var h = Math.round(vv ? vv.height : window.innerHeight || document.documentElement.clientHeight);
+    if (document.documentElement.style.setProperty) {
+      document.documentElement.style.setProperty("--app-width", w + "px");
+      document.documentElement.style.setProperty("--app-height", h + "px");
+    }
+    var wrapper = document.getElementById("app-wrapper");
+    var stage = document.getElementById("stage-container");
+    if (wrapper) {
+      wrapper.style.width = w + "px";
+      wrapper.style.height = h + "px";
+    }
+    if (stage) {
+      if (w <= 960 || h <= 540) {
+        stage.style.width = w + "px";
+        stage.style.height = h + "px";
+      } else {
+        stage.style.width = "";
+        stage.style.height = "";
+      }
+    }
   }
 
   /**
    * 상단 바 버튼 이벤트 바인딩
    */
   function bindTopBarEvents() {
-    const btnHome = document.getElementById("btn-home");
-    const btnStageBadge = document.getElementById("btn-stage-badge");
-    const btnRepeatTts = document.getElementById("btn-repeat-tts");
-    const btnStickerbook = document.getElementById("btn-stickerbook");
-    const btnFullscreen = document.getElementById("btn-fullscreen");
-    const btnParentLock = document.getElementById("btn-parent-lock");
+    var btnHome = document.getElementById("btn-home");
+    var btnStageBadge = document.getElementById("btn-stage-badge");
+    var btnRepeatTts = document.getElementById("btn-repeat-tts");
+    var btnStickerbook = document.getElementById("btn-stickerbook");
+    var btnFullscreen = document.getElementById("btn-fullscreen");
+    var btnParentLock = document.getElementById("btn-parent-lock");
 
     if (btnFullscreen) {
-      btnFullscreen.addEventListener("click", () => {
+      btnFullscreen.addEventListener("click", function () {
         HG.Audio.playTap();
-        const docEl = document.documentElement;
-        const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+        var docEl = document.documentElement;
+        var isFs = document.fullscreenElement || document.webkitFullscreenElement;
         if (!isFs) {
-          const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
+          var req = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
           if (req) {
-            Promise.resolve(req.call(docEl))
-              .then(() => {
-                if (screen.orientation && screen.orientation.lock) {
-                  screen.orientation.lock("landscape").catch(() => {});
-                }
-                setTimeout(syncViewportMetrics, 150);
-              })
-              .catch(() => {});
+            try {
+              req.call(docEl);
+              if (screen.orientation && screen.orientation.lock) {
+                try {
+                  var p = screen.orientation.lock("landscape");
+                  if (p && p.catch) p.catch(function () {});
+                } catch (e2) {}
+              }
+              setTimeout(syncViewportMetrics, 150);
+            } catch (e) {}
           }
         } else {
-          const exit = document.exitFullscreen || document.webkitExitFullscreen;
+          var exit = document.exitFullscreen || document.webkitExitFullscreen;
           if (exit) {
-            Promise.resolve(exit.call(document))
-              .then(() => setTimeout(syncViewportMetrics, 150))
-              .catch(() => {});
+            try { exit.call(document); setTimeout(syncViewportMetrics, 150); } catch (e) {}
           }
         }
       });
     }
 
     if (btnHome) {
-      btnHome.addEventListener("click", () => {
+      btnHome.addEventListener("click", function () {
         HG.Audio.playTap();
         showScreen("home");
       });
     }
 
     if (btnStageBadge) {
-      btnStageBadge.addEventListener("click", () => {
+      btnStageBadge.addEventListener("click", function () {
         HG.Audio.playTap();
-        const nextStage = (state.currentStage % 5) + 1;
+        var nextStage = (state.currentStage % 5) + 1;
         setStage(nextStage);
       });
     }
 
     if (btnRepeatTts) {
-      btnRepeatTts.addEventListener("click", () => {
+      btnRepeatTts.addEventListener("click", function () {
         HG.Audio.playTap();
         if (activeGameKey && HG.Games[activeGameKey]) {
           HG.Games[activeGameKey].repeatPrompt();
@@ -202,7 +213,7 @@ window.HG = window.HG || {};
     }
 
     if (btnStickerbook) {
-      btnStickerbook.addEventListener("click", () => {
+      btnStickerbook.addEventListener("click", function () {
         HG.Audio.playTap();
         showScreen("stickerbook");
       });
@@ -210,10 +221,10 @@ window.HG = window.HG || {};
 
     // 우측 상단 부모님 설정 버튼: 3초간 길게 누르기 (Long-Press)
     if (btnParentLock) {
-      const ringFill = document.getElementById("parent-ring-fill");
-      const circumference = 113.1;
+      var ringFill = document.getElementById("parent-ring-fill");
+      var circumference = 113.1;
 
-      const cancelHold = () => {
+      var cancelHold = function () {
         holdStartTime = 0;
         if (holdAnimFrame) {
           cancelAnimationFrame(holdAnimFrame);
@@ -224,10 +235,10 @@ window.HG = window.HG || {};
         }
       };
 
-      const updateHold = (now) => {
+      var updateHold = function (now) {
         if (!holdStartTime) return;
-        const elapsed = now - holdStartTime;
-        const progress = Math.min(1, elapsed / HOLD_DURATION_MS);
+        var elapsed = now - holdStartTime;
+        var progress = Math.min(1, elapsed / HOLD_DURATION_MS);
         if (ringFill) {
           ringFill.style.strokeDashoffset = String(circumference * (1 - progress));
         }
@@ -239,13 +250,13 @@ window.HG = window.HG || {};
         holdAnimFrame = requestAnimationFrame(updateHold);
       };
 
-      btnParentLock.addEventListener("pointerdown", (e) => {
+      btnParentLock.addEventListener("pointerdown", function (e) {
         e.preventDefault();
         holdStartTime = performance.now();
         holdAnimFrame = requestAnimationFrame(updateHold);
       });
 
-      ["pointerup", "pointerleave", "pointercancel"].forEach((evt) => {
+      ["pointerup", "pointerleave", "pointercancel"].forEach(function (evt) {
         btnParentLock.addEventListener(evt, cancelHold);
       });
     }
@@ -255,20 +266,20 @@ window.HG = window.HG || {};
    * 홈 화면 단계 선택 탭 및 미니게임 4종 카드 클릭 이벤트
    */
   function bindHomeEvents() {
-    const stageTabs = document.querySelectorAll("#home-stage-selector .stage-tab");
-    stageTabs.forEach((tab) => {
-      tab.addEventListener("click", () => {
+    var stageTabs = document.querySelectorAll("#home-stage-selector .stage-tab");
+    stageTabs.forEach(function (tab) {
+      tab.addEventListener("click", function () {
         HG.Audio.playTap();
-        const stg = Number(tab.dataset.stage) || 1;
+        var stg = Number(tab.dataset.stage) || 1;
         setStage(stg);
       });
     });
 
-    const gameCards = document.querySelectorAll(".game-mode-card");
-    gameCards.forEach((card) => {
-      card.addEventListener("click", () => {
+    var gameCards = document.querySelectorAll(".game-mode-card");
+    gameCards.forEach(function (card) {
+      card.addEventListener("click", function () {
         HG.Audio.playTap();
-        const gameKey = card.dataset.game;
+        var gameKey = card.dataset.game;
         startGame(gameKey);
       });
     });
@@ -279,45 +290,45 @@ window.HG = window.HG || {};
     saveState();
     syncStageUI();
 
-    const meta = HG.Words.STAGE_META[state.currentStage];
-    HG.Character.say(`${meta.title}! ${meta.desc}`);
+    var meta = HG.Words.STAGE_META[state.currentStage];
+    HG.Character.say(((meta.title) + "! " + (meta.desc)));
     HG.Audio.speak(meta.title);
 
     // 현재 미니게임 플레이 중이면 새 단계로 즉시 문제 갱신
     if (activeGameKey && HG.Games[activeGameKey]) {
-      const mount = document.getElementById("game-mount");
+      var mount = document.getElementById("game-mount");
       HG.Games[activeGameKey].start(mount, state.currentStage, handleProblemSolved);
     }
   }
 
   function syncStageUI() {
-    const meta = HG.Words.STAGE_META[state.currentStage];
-    const badgeLabel = document.getElementById("current-stage-label");
+    var meta = HG.Words.STAGE_META[state.currentStage];
+    var badgeLabel = document.getElementById("current-stage-label");
     if (badgeLabel && meta) {
       badgeLabel.textContent = meta.title;
     }
 
-    const stageTabs = document.querySelectorAll("#home-stage-selector .stage-tab");
-    stageTabs.forEach((tab) => {
-      const tabStage = Number(tab.dataset.stage);
+    var stageTabs = document.querySelectorAll("#home-stage-selector .stage-tab");
+    stageTabs.forEach(function (tab) {
+      var tabStage = Number(tab.dataset.stage);
       tab.classList.toggle("active", tabStage === state.currentStage);
     });
 
-    const parentSelect = document.getElementById("select-parent-stage");
+    var parentSelect = document.getElementById("select-parent-stage");
     if (parentSelect) {
       parentSelect.value = String(state.currentStage);
     }
   }
 
   function syncStarProgressUI() {
-    const slots = document.querySelectorAll("#round-progress .star-slot");
-    slots.forEach((slot, idx) => {
+    var slots = document.querySelectorAll("#round-progress .star-slot");
+    slots.forEach(function (slot, idx) {
       slot.classList.toggle("filled", idx < state.roundStars);
     });
   }
 
   function syncStickerBadgeUI() {
-    const badge = document.getElementById("sticker-count-badge");
+    var badge = document.getElementById("sticker-count-badge");
     if (badge) {
       badge.textContent = String(state.unlockedStickers.length);
     }
@@ -332,19 +343,19 @@ window.HG = window.HG || {};
       activeGameKey = null;
     }
 
-    const screens = {
+    var screens = {
       home: document.getElementById("screen-home"),
       game: document.getElementById("screen-game"),
       stickerbook: document.getElementById("screen-stickerbook")
     };
 
-    Object.keys(screens).forEach((key) => {
+    Object.keys(screens).forEach(function (key) {
       if (screens[key]) {
         screens[key].classList.toggle("active", key === screenName);
       }
     });
 
-    const repeatBtn = document.getElementById("btn-repeat-tts");
+    var repeatBtn = document.getElementById("btn-repeat-tts");
     if (repeatBtn) {
       repeatBtn.classList.toggle("hidden", screenName !== "game");
     }
@@ -365,10 +376,10 @@ window.HG = window.HG || {};
     showScreen("game");
     activeGameKey = gameKey;
 
-    const repeatBtn = document.getElementById("btn-repeat-tts");
+    var repeatBtn = document.getElementById("btn-repeat-tts");
     if (repeatBtn) repeatBtn.classList.remove("hidden");
 
-    const mount = document.getElementById("game-mount");
+    var mount = document.getElementById("game-mount");
     HG.Games[gameKey].start(mount, state.currentStage, handleProblemSolved);
   }
 
@@ -384,7 +395,7 @@ window.HG = window.HG || {};
 
     if (state.roundStars >= 5) {
       // 5문제 달성 -> 스티커 보상 모달 오픈!
-      setTimeout(() => {
+      setTimeout(function () {
         triggerStickerReward();
       }, 350);
     } else {
@@ -399,9 +410,9 @@ window.HG = window.HG || {};
    * 5문제 완료 보상 연출 (5~8초 축하 팡파레 + 꽃가루 + 움직이는 스티커 획득)
    */
   function triggerStickerReward() {
-    const catalog = HG.Words.STICKER_CATALOG;
-    const lockedList = catalog.filter((s) => !state.unlockedStickers.includes(s.id));
-    const chosenSticker =
+    var catalog = HG.Words.STICKER_CATALOG;
+    var lockedList = catalog.filter(function (s) { return !state.unlockedStickers.includes(s.id); });
+    var chosenSticker =
       lockedList.length > 0
         ? lockedList[Math.floor(Math.random() * lockedList.length)]
         : catalog[Math.floor(Math.random() * catalog.length)];
@@ -415,16 +426,16 @@ window.HG = window.HG || {};
     syncStarProgressUI();
     syncStickerBadgeUI();
 
-    const overlay = document.getElementById("reward-overlay");
-    const showcase = document.getElementById("reward-sticker-showcase");
-    const titleEl = document.getElementById("reward-sticker-title");
-    const descEl = document.getElementById("reward-sticker-desc");
+    var overlay = document.getElementById("reward-overlay");
+    var showcase = document.getElementById("reward-sticker-showcase");
+    var titleEl = document.getElementById("reward-sticker-title");
+    var descEl = document.getElementById("reward-sticker-desc");
 
     if (showcase) {
       showcase.innerHTML = HG.Words.getIllustSvg(chosenSticker.icon);
     }
     if (titleEl) {
-      titleEl.textContent = `🎉 [${chosenSticker.name}] 스티커 획득!`;
+      titleEl.textContent = ("🎉 [" + (chosenSticker.name) + "] 스티커 획득!");
     }
     if (descEl) {
       descEl.textContent = chosenSticker.desc;
@@ -436,32 +447,32 @@ window.HG = window.HG || {};
 
     spawnConfettiPieces(42);
     HG.Audio.playFanfare();
-    HG.Character.reactHappy(`우와!! 별 5개를 모두 모아서 [${chosenSticker.name}] 스티커를 받았어! 🎉`);
+    HG.Character.reactHappy(("우와!! 별 5개를 모두 모아서 [" + (chosenSticker.name) + "] 스티커를 받았어! 🎉"));
 
-    setTimeout(() => {
-      HG.Audio.speak(`참 잘했어요! ${chosenSticker.name} 스티커를 받았어요!`);
+    setTimeout(function () {
+      HG.Audio.speak(("참 잘했어요! " + (chosenSticker.name) + " 스티커를 받았어요!"));
     }, 900);
 
     // 7초간 신나는 축하 애니메이션 후 자동으로 다음 라운드로 이어지거나 버튼으로 즉시 이동 가능
     if (rewardAutoTimer) clearTimeout(rewardAutoTimer);
-    rewardAutoTimer = setTimeout(() => {
+    rewardAutoTimer = setTimeout(function () {
       closeRewardModalAndContinue();
     }, 7000);
   }
 
   function spawnConfettiPieces(count) {
-    const layer = document.getElementById("confetti-layer");
+    var layer = document.getElementById("confetti-layer");
     if (!layer) return;
     layer.innerHTML = "";
-    const colors = ["#FF7043", "#FFD54F", "#29B6F6", "#66BB6A", "#AB47BC", "#EC407A"];
+    var colors = ["#FF7043", "#FFD54F", "#29B6F6", "#66BB6A", "#AB47BC", "#EC407A"];
 
-    for (let i = 0; i < count; i++) {
-      const piece = document.createElement("div");
+    for (var i = 0; i < count; i++) {
+      var piece = document.createElement("div");
       piece.className = "confetti-piece";
-      piece.style.left = `${Math.random() * 100}%`;
+      piece.style.left = ((Math.random() * 100) + "%");
       piece.style.backgroundColor = colors[i % colors.length];
-      piece.style.animationDuration = `${2.2 + Math.random() * 2.4}s`;
-      piece.style.animationDelay = `${Math.random() * 1.2}s`;
+      piece.style.animationDuration = ((2.2 + Math.random() * 2.4) + "s");
+      piece.style.animationDelay = ((Math.random() * 1.2) + "s");
       layer.appendChild(piece);
     }
   }
@@ -471,7 +482,7 @@ window.HG = window.HG || {};
       clearTimeout(rewardAutoTimer);
       rewardAutoTimer = null;
     }
-    const overlay = document.getElementById("reward-overlay");
+    var overlay = document.getElementById("reward-overlay");
     if (overlay) overlay.classList.add("hidden");
 
     if (activeGameKey && HG.Games[activeGameKey]) {
@@ -480,24 +491,24 @@ window.HG = window.HG || {};
   }
 
   function bindRewardModalEvents() {
-    const btnContinue = document.getElementById("btn-reward-continue");
-    const btnStickerbook = document.getElementById("btn-reward-stickerbook");
+    var btnContinue = document.getElementById("btn-reward-continue");
+    var btnStickerbook = document.getElementById("btn-reward-stickerbook");
 
     if (btnContinue) {
-      btnContinue.addEventListener("click", () => {
+      btnContinue.addEventListener("click", function () {
         HG.Audio.playTap();
         closeRewardModalAndContinue();
       });
     }
 
     if (btnStickerbook) {
-      btnStickerbook.addEventListener("click", () => {
+      btnStickerbook.addEventListener("click", function () {
         HG.Audio.playTap();
         if (rewardAutoTimer) {
           clearTimeout(rewardAutoTimer);
           rewardAutoTimer = null;
         }
-        const overlay = document.getElementById("reward-overlay");
+        var overlay = document.getElementById("reward-overlay");
         if (overlay) overlay.classList.add("hidden");
         showScreen("stickerbook");
       });
@@ -508,36 +519,30 @@ window.HG = window.HG || {};
    * [내 스티커북] 렌더링 및 터치 시 춤추는 인터랙션
    */
   function renderStickerbook() {
-    const grid = document.getElementById("sticker-grid");
+    var grid = document.getElementById("sticker-grid");
     if (!grid) return;
     grid.innerHTML = "";
 
-    HG.Words.STICKER_CATALOG.forEach((stk) => {
-      const isUnlocked = state.unlockedStickers.includes(stk.id);
-      const card = document.createElement("button");
+    HG.Words.STICKER_CATALOG.forEach(function (stk) {
+      var isUnlocked = state.unlockedStickers.includes(stk.id);
+      var card = document.createElement("button");
       card.type = "button";
-      card.className = `sticker-card-item ${isUnlocked ? "unlocked" : "locked"}`;
+      card.className = ("sticker-card-item " + (isUnlocked ? "unlocked" : "locked"));
 
       if (isUnlocked) {
-        card.innerHTML = `
-          <div class="sticker-svg-box">${HG.Words.getIllustSvg(stk.icon)}</div>
-          <div class="sticker-name">${stk.name}</div>
-        `;
-        card.addEventListener("click", () => {
+        card.innerHTML = ("\n          <div class=\"sticker-svg-box\">" + (HG.Words.getIllustSvg(stk.icon)) + "</div>\n          <div class=\"sticker-name\">" + (stk.name) + "</div>\n        ");
+        card.addEventListener("click", function () {
           HG.Audio.playCorrect();
-          HG.Audio.speak(`${stk.name}! ${stk.desc}`);
-          HG.Character.reactHappy(`${stk.name}! ${stk.desc} 💃`);
+          HG.Audio.speak(((stk.name) + "! " + (stk.desc)));
+          HG.Character.reactHappy(((stk.name) + "! " + (stk.desc) + " 💃"));
 
           card.classList.remove("sticker-dancing");
           void card.offsetWidth;
           card.classList.add("sticker-dancing");
         });
       } else {
-        card.innerHTML = `
-          <div class="sticker-svg-box" style="display:flex;align-items:center;justify-content:center;font-size:36px;">🔒</div>
-          <div class="sticker-name">별 5개 모아 열기</div>
-        `;
-        card.addEventListener("click", () => {
+        card.innerHTML = ("\n          <div class=\"sticker-svg-box\" style=\"display:flex;align-items:center;justify-content:center;font-size:36px;\">🔒</div>\n          <div class=\"sticker-name\">별 5개 모아 열기</div>\n        ");
+        card.addEventListener("click", function () {
           HG.Audio.playTap();
           HG.Character.say("별을 5개 모으면 이 비밀 스티커 친구도 만날 수 있어! 🎁");
         });
@@ -552,9 +557,9 @@ window.HG = window.HG || {};
    */
   function openParentModal() {
     HG.Audio.playTap();
-    const modal = document.getElementById("parent-modal");
-    const statStickers = document.getElementById("parent-stat-stickers");
-    const statSolved = document.getElementById("parent-stat-solved");
+    var modal = document.getElementById("parent-modal");
+    var statStickers = document.getElementById("parent-stat-stickers");
+    var statSolved = document.getElementById("parent-stat-solved");
 
     if (statStickers) statStickers.textContent = String(state.unlockedStickers.length);
     if (statSolved) statSolved.textContent = String(state.totalSolved);
@@ -565,42 +570,42 @@ window.HG = window.HG || {};
   }
 
   function populateVoiceSelectUI() {
-    const selectVoice = document.getElementById("select-parent-voice");
+    var selectVoice = document.getElementById("select-parent-voice");
     if (!selectVoice || !HG.Audio.getKoreanVoices) return;
 
-    const voices = HG.Audio.getKoreanVoices();
-    selectVoice.innerHTML = `<option value="">자동 추천 (상냥한 여선생님 목소리)</option>`;
-    voices.forEach((v) => {
-      const opt = document.createElement("option");
+    var voices = HG.Audio.getKoreanVoices();
+    selectVoice.innerHTML = ("<option value=\"\">자동 추천 (상냥한 여선생님 목소리)</option>");
+    voices.forEach(function (v) {
+      var opt = document.createElement("option");
       opt.value = v.voiceURI;
-      const badge =
+      var badge =
         v.name.toLowerCase().includes("natural") ||
         v.name.toLowerCase().includes("google") ||
         v.name.toLowerCase().includes("premium")
           ? " ★고품질"
           : "";
-      opt.textContent = `${v.name}${badge}`;
+      opt.textContent = ((v.name) + (badge));
       selectVoice.appendChild(opt);
     });
     selectVoice.value = state.preferredVoiceURI || "";
   }
 
   function bindParentModalEvents() {
-    const modal = document.getElementById("parent-modal");
-    const btnClose = document.getElementById("btn-close-parent");
-    const selectStage = document.getElementById("select-parent-stage");
-    const inputVol = document.getElementById("input-parent-volume");
-    const labelVol = document.getElementById("label-parent-volume");
-    const inputRate = document.getElementById("input-parent-rate");
-    const labelRate = document.getElementById("label-parent-rate");
-    const selectVoice = document.getElementById("select-parent-voice");
-    const btnTestVoice = document.getElementById("btn-test-voice");
-    const chkTimer = document.getElementById("chk-rest-timer");
-    const btnResetTimer = document.getElementById("btn-reset-timer");
-    const btnResetProgress = document.getElementById("btn-reset-progress");
+    var modal = document.getElementById("parent-modal");
+    var btnClose = document.getElementById("btn-close-parent");
+    var selectStage = document.getElementById("select-parent-stage");
+    var inputVol = document.getElementById("input-parent-volume");
+    var labelVol = document.getElementById("label-parent-volume");
+    var inputRate = document.getElementById("input-parent-rate");
+    var labelRate = document.getElementById("label-parent-rate");
+    var selectVoice = document.getElementById("select-parent-voice");
+    var btnTestVoice = document.getElementById("btn-test-voice");
+    var chkTimer = document.getElementById("chk-rest-timer");
+    var btnResetTimer = document.getElementById("btn-reset-timer");
+    var btnResetProgress = document.getElementById("btn-reset-progress");
 
     if (btnClose && modal) {
-      btnClose.addEventListener("click", () => {
+      btnClose.addEventListener("click", function () {
         HG.Audio.playTap();
         modal.classList.add("hidden");
       });
@@ -608,17 +613,17 @@ window.HG = window.HG || {};
 
     if (selectStage) {
       selectStage.value = String(state.currentStage);
-      selectStage.addEventListener("change", () => {
+      selectStage.addEventListener("change", function () {
         setStage(Number(selectStage.value));
       });
     }
 
     if (inputVol && labelVol) {
       inputVol.value = String(state.volume);
-      labelVol.textContent = `${state.volume}%`;
-      inputVol.addEventListener("input", () => {
+      labelVol.textContent = ((state.volume) + "%");
+      inputVol.addEventListener("input", function () {
         state.volume = Number(inputVol.value);
-        labelVol.textContent = `${state.volume}%`;
+        labelVol.textContent = ((state.volume) + "%");
         HG.Audio.setVolume(state.volume / 100);
         saveState();
       });
@@ -626,10 +631,10 @@ window.HG = window.HG || {};
 
     if (inputRate && labelRate) {
       inputRate.value = String(state.speechRate);
-      labelRate.textContent = `${state.speechRate}x`;
-      inputRate.addEventListener("input", () => {
+      labelRate.textContent = ((state.speechRate) + "x");
+      inputRate.addEventListener("input", function () {
         state.speechRate = Number(inputRate.value);
-        labelRate.textContent = `${state.speechRate}x`;
+        labelRate.textContent = ((state.speechRate) + "x");
         HG.Audio.setSpeechRate(state.speechRate);
         saveState();
       });
@@ -637,8 +642,8 @@ window.HG = window.HG || {};
 
     if (selectVoice) {
       populateVoiceSelectUI();
-      HG.onVoicesUpdated = () => populateVoiceSelectUI();
-      selectVoice.addEventListener("change", () => {
+      HG.onVoicesUpdated = function () { populateVoiceSelectUI(); };
+      selectVoice.addEventListener("change", function () {
         state.preferredVoiceURI = selectVoice.value;
         HG.Audio.setPreferredVoice(state.preferredVoiceURI);
         saveState();
@@ -647,7 +652,7 @@ window.HG = window.HG || {};
     }
 
     if (btnTestVoice) {
-      btnTestVoice.addEventListener("click", () => {
+      btnTestVoice.addEventListener("click", function () {
         HG.Audio.playTap();
         HG.Audio.speak("안녕하세요, 우리 친구, 선생님하고 신나게 한글 놀이를 해 볼까요?");
       });
@@ -655,7 +660,7 @@ window.HG = window.HG || {};
 
     if (chkTimer) {
       chkTimer.checked = Boolean(state.restTimerEnabled);
-      chkTimer.addEventListener("change", () => {
+      chkTimer.addEventListener("change", function () {
         state.restTimerEnabled = chkTimer.checked;
         saveState();
         updateTimerBadgeUI();
@@ -663,7 +668,7 @@ window.HG = window.HG || {};
     }
 
     if (btnResetTimer) {
-      btnResetTimer.addEventListener("click", () => {
+      btnResetTimer.addEventListener("click", function () {
         HG.Audio.playTap();
         restRemainingSec = REST_LIMIT_SECONDS;
         updateTimerBadgeUI();
@@ -671,7 +676,7 @@ window.HG = window.HG || {};
     }
 
     if (btnResetProgress) {
-      btnResetProgress.addEventListener("click", () => {
+      btnResetProgress.addEventListener("click", function () {
         HG.Audio.playTap();
         state.roundStars = 0;
         state.totalSolved = 0;
@@ -680,8 +685,8 @@ window.HG = window.HG || {};
         syncStarProgressUI();
         syncStickerBadgeUI();
 
-        const statStickers = document.getElementById("parent-stat-stickers");
-        const statSolved = document.getElementById("parent-stat-solved");
+        var statStickers = document.getElementById("parent-stat-stickers");
+        var statSolved = document.getElementById("parent-stat-solved");
         if (statStickers) statStickers.textContent = "1";
         if (statSolved) statSolved.textContent = "0";
 
@@ -699,7 +704,7 @@ window.HG = window.HG || {};
     if (restIntervalId) clearInterval(restIntervalId);
     updateTimerBadgeUI();
 
-    restIntervalId = setInterval(() => {
+    restIntervalId = setInterval(function () {
       if (!state.restTimerEnabled) return;
       if (restRemainingSec > 0) {
         restRemainingSec -= 1;
@@ -712,19 +717,19 @@ window.HG = window.HG || {};
   }
 
   function updateTimerBadgeUI() {
-    const badge = document.getElementById("rest-timer-remain");
+    var badge = document.getElementById("rest-timer-remain");
     if (!badge) return;
     if (!state.restTimerEnabled) {
       badge.textContent = "타이머 꺼짐";
       return;
     }
-    const mins = String(Math.floor(restRemainingSec / 60)).padStart(2, "0");
-    const secs = String(restRemainingSec % 60).padStart(2, "0");
-    badge.textContent = `남은 시간 ${mins}:${secs}`;
+    var mins = String(Math.floor(restRemainingSec / 60)).padStart(2, "0");
+    var secs = String(restRemainingSec % 60).padStart(2, "0");
+    badge.textContent = ("남은 시간 " + (mins) + ":" + (secs));
   }
 
   function showRestOverlay() {
-    const restOverlay = document.getElementById("rest-overlay");
+    var restOverlay = document.getElementById("rest-overlay");
     if (restOverlay) {
       restOverlay.classList.remove("hidden");
       HG.Audio.speak("눈을 깜빡깜빡! 쉬는 시간이에요. 물도 한 잔 마시고 올까요?");
@@ -732,10 +737,10 @@ window.HG = window.HG || {};
   }
 
   function bindRestOverlayEvents() {
-    const btnResume = document.getElementById("btn-resume-from-rest");
-    const restOverlay = document.getElementById("rest-overlay");
+    var btnResume = document.getElementById("btn-resume-from-rest");
+    var restOverlay = document.getElementById("rest-overlay");
     if (btnResume && restOverlay) {
-      btnResume.addEventListener("click", () => {
+      btnResume.addEventListener("click", function () {
         HG.Audio.playTap();
         restRemainingSec = REST_LIMIT_SECONDS;
         updateTimerBadgeUI();

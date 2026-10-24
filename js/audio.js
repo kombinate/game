@@ -12,15 +12,15 @@ window.HG = window.HG || {};
 (function (HG) {
   "use strict";
 
-  let audioCtx = null;
-  let isUnlocked = false;
-  let masterVolume = 0.85;
-  let speechRate = 0.92; // 자연스러운 여선생님 말하기 속도 (기계음 타임스트레칭 왜곡 최소화)
-  let koreanVoice = null;
-  let preferredVoiceURI = ""; // 사용자가 부모 설정에서 직접 지정한 음성 URI
+  var audioCtx = null;
+  var isUnlocked = false;
+  var masterVolume = 0.85;
+  var speechRate = 0.92; // 자연스러운 여선생님 말하기 속도 (기계음 타임스트레칭 왜곡 최소화)
+  var koreanVoice = null;
+  var preferredVoiceURI = ""; // 사용자가 부모 설정에서 직접 지정한 음성 URI
 
   // 단일 자음/모음을 읽을 때 특수문자 없이 깨끗한 한국어 발음만 전달
-  const PHONETIC_MAP = {
+  var PHONETIC_MAP = {
     "ㅏ": "아",
     "ㅑ": "야",
     "ㅓ": "어",
@@ -63,13 +63,13 @@ window.HG = window.HG || {};
 
   function getContext() {
     if (!audioCtx) {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      var AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (AudioContextClass) {
         audioCtx = new AudioContextClass();
       }
     }
     if (audioCtx && audioCtx.state === "suspended") {
-      audioCtx.resume().catch(() => {});
+      if (audioCtx.resume) { try { audioCtx.resume(); } catch (e) {} }
     }
     return audioCtx;
   }
@@ -80,9 +80,9 @@ window.HG = window.HG || {};
    *   SunHi Natural(Edge), Google 한국의(Chrome WaveNet), Yuna Enhanced/Premium(Apple) 등을 최우선 선택합니다.
    */
   function scoreKoreanVoice(v) {
-    const name = (v.name || "").toLowerCase();
-    const uri = (v.voiceURI || "").toLowerCase();
-    let score = 0;
+    var name = (v.name || "").toLowerCase();
+    var uri = (v.voiceURI || "").toLowerCase();
+    var score = 0;
 
     // 남성 음성(InJoon, BongJin, GookMin 등)은 여선생님 컨셉에서 후순위로 배치
     if (
@@ -118,18 +118,18 @@ window.HG = window.HG || {};
 
   function getKoreanVoices() {
     if (!("speechSynthesis" in window)) return [];
-    const all = window.speechSynthesis.getVoices() || [];
+    var all = window.speechSynthesis.getVoices() || [];
     return all
-      .filter((v) => v.lang && v.lang.toLowerCase().replace("_", "-").startsWith("ko"))
-      .sort((a, b) => scoreKoreanVoice(b) - scoreKoreanVoice(a));
+      .filter(function (v) { return v.lang && v.lang.toLowerCase().replace("_", "-").startsWith("ko"); })
+      .sort(function (a, b) { return scoreKoreanVoice(b) - scoreKoreanVoice(a); });
   }
 
   function loadKoreanVoice() {
-    const koVoices = getKoreanVoices();
+    var koVoices = getKoreanVoices();
     if (!koVoices.length) return;
 
     if (preferredVoiceURI) {
-      const matched = koVoices.find((v) => v.voiceURI === preferredVoiceURI || v.name === preferredVoiceURI);
+      var matched = koVoices.find(function (v) { return v.voiceURI === preferredVoiceURI || v.name === preferredVoiceURI; });
       if (matched) {
         koreanVoice = matched;
         return;
@@ -142,7 +142,7 @@ window.HG = window.HG || {};
   if ("speechSynthesis" in window) {
     loadKoreanVoice();
     if (typeof window.speechSynthesis.onvoiceschanged !== "undefined") {
-      window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.onvoiceschanged = function () {
         loadKoreanVoice();
         if (typeof HG.onVoicesUpdated === "function") {
           HG.onVoicesUpdated(getKoreanVoices(), koreanVoice);
@@ -154,10 +154,10 @@ window.HG = window.HG || {};
   // 모바일 오디오 잠금 해제 (첫 터치/클릭 이벤트에 바인딩)
   function unlockAudio() {
     if (isUnlocked) return;
-    const ctx = getContext();
+    var ctx = getContext();
     if (ctx) {
-      const buffer = ctx.createBuffer(1, 1, 22050);
-      const source = ctx.createBufferSource();
+      var buffer = ctx.createBuffer(1, 1, 22050);
+      var source = ctx.createBufferSource();
       source.buffer = buffer;
       source.connect(ctx.destination);
       try {
@@ -167,7 +167,7 @@ window.HG = window.HG || {};
     if ("speechSynthesis" in window) {
       loadKoreanVoice();
       try {
-        const warmUp = new SpeechSynthesisUtterance("");
+        var warmUp = new SpeechSynthesisUtterance("");
         warmUp.volume = 0;
         warmUp.lang = "ko-KR";
         window.speechSynthesis.speak(warmUp);
@@ -176,7 +176,7 @@ window.HG = window.HG || {};
     isUnlocked = true;
   }
 
-  ["pointerdown", "touchstart", "click", "keydown"].forEach((evtName) => {
+  ["pointerdown", "touchstart", "click", "keydown"].forEach(function (evtName) {
     window.addEventListener(evtName, unlockAudio, { once: true, passive: true });
   });
 
@@ -185,12 +185,12 @@ window.HG = window.HG || {};
    */
   function playTap() {
     if (masterVolume <= 0) return;
-    const ctx = getContext();
+    var ctx = getContext();
     if (!ctx) return;
 
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    var now = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
 
     osc.type = "sine";
     osc.frequency.setValueAtTime(520, now);
@@ -211,12 +211,12 @@ window.HG = window.HG || {};
    */
   function playPop() {
     if (masterVolume <= 0) return;
-    const ctx = getContext();
+    var ctx = getContext();
     if (!ctx) return;
 
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const oscGain = ctx.createGain();
+    var now = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var oscGain = ctx.createGain();
     osc.type = "triangle";
     osc.frequency.setValueAtTime(420, now);
     osc.frequency.exponentialRampToValueAtTime(110, now + 0.11);
@@ -229,21 +229,21 @@ window.HG = window.HG || {};
     osc.start(now);
     osc.stop(now + 0.125);
 
-    const bufferSize = Math.floor(ctx.sampleRate * 0.05);
-    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
+    var bufferSize = Math.floor(ctx.sampleRate * 0.05);
+    var noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    var data = noiseBuffer.getChannelData(0);
+    for (var i = 0; i < bufferSize; i++) {
       data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
     }
 
-    const noise = ctx.createBufferSource();
+    var noise = ctx.createBufferSource();
     noise.buffer = noiseBuffer;
 
-    const filter = ctx.createBiquadFilter();
+    var filter = ctx.createBiquadFilter();
     filter.type = "bandpass";
     filter.frequency.setValueAtTime(1200, now);
 
-    const noiseGain = ctx.createGain();
+    var noiseGain = ctx.createGain();
     noiseGain.gain.setValueAtTime(0.4 * masterVolume, now);
     noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
 
@@ -258,21 +258,21 @@ window.HG = window.HG || {};
    */
   function playCorrect() {
     if (masterVolume <= 0) return;
-    const ctx = getContext();
+    var ctx = getContext();
     if (!ctx) return;
 
-    const notes = [
+    var notes = [
       { freq: 523.25, start: 0.0, dur: 0.22 },
       { freq: 659.25, start: 0.11, dur: 0.22 },
       { freq: 783.99, start: 0.22, dur: 0.26 },
       { freq: 1046.5, start: 0.34, dur: 0.45 }
     ];
 
-    const now = ctx.currentTime;
-    notes.forEach((n) => {
-      const osc = ctx.createOscillator();
-      const overtone = ctx.createOscillator();
-      const gain = ctx.createGain();
+    var now = ctx.currentTime;
+    notes.forEach(function (n) {
+      var osc = ctx.createOscillator();
+      var overtone = ctx.createOscillator();
+      var gain = ctx.createGain();
 
       osc.type = "sine";
       osc.frequency.setValueAtTime(n.freq, now + n.start);
@@ -280,7 +280,7 @@ window.HG = window.HG || {};
       overtone.type = "triangle";
       overtone.frequency.setValueAtTime(n.freq * 2, now + n.start);
 
-      const overtoneGain = ctx.createGain();
+      var overtoneGain = ctx.createGain();
       overtoneGain.gain.setValueAtTime(0.1, now + n.start);
 
       gain.gain.setValueAtTime(0.001, now + n.start);
@@ -304,18 +304,18 @@ window.HG = window.HG || {};
    */
   function playEncourage() {
     if (masterVolume <= 0) return;
-    const ctx = getContext();
+    var ctx = getContext();
     if (!ctx) return;
 
-    const now = ctx.currentTime;
-    const notes = [
+    var now = ctx.currentTime;
+    var notes = [
       { freq: 392.0, start: 0.0, dur: 0.16 },
       { freq: 440.0, start: 0.12, dur: 0.24 }
     ];
 
-    notes.forEach((n) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+    notes.forEach(function (n) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
       osc.type = "sine";
       osc.frequency.setValueAtTime(n.freq, now + n.start);
 
@@ -332,17 +332,18 @@ window.HG = window.HG || {};
   /**
    * 5. 따라쓰기 반짝이 효과음
    */
-  function playSparkle(stepIndex = 0) {
+  function playSparkle(stepIndex) {
+    if (stepIndex === void 0) stepIndex = 0;
     if (masterVolume <= 0) return;
-    const ctx = getContext();
+    var ctx = getContext();
     if (!ctx) return;
 
-    const scale = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.5];
-    const freq = scale[stepIndex % scale.length];
-    const now = ctx.currentTime;
+    var scale = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.5];
+    var freq = scale[stepIndex % scale.length];
+    var now = ctx.currentTime;
 
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
     osc.type = "sine";
     osc.frequency.setValueAtTime(freq, now);
 
@@ -364,10 +365,10 @@ window.HG = window.HG || {};
    */
   function playFanfare() {
     if (masterVolume <= 0) return;
-    const ctx = getContext();
+    var ctx = getContext();
     if (!ctx) return;
 
-    const melody = [
+    var melody = [
       { freq: 523.25, start: 0.0, dur: 0.16 },
       { freq: 659.25, start: 0.16, dur: 0.16 },
       { freq: 783.99, start: 0.32, dur: 0.16 },
@@ -376,18 +377,18 @@ window.HG = window.HG || {};
       { freq: 1046.5, start: 1.0, dur: 0.65 }
     ];
 
-    const now = ctx.currentTime;
-    melody.forEach((m) => {
-      const osc1 = ctx.createOscillator();
-      const osc2 = ctx.createOscillator();
-      const gain = ctx.createGain();
+    var now = ctx.currentTime;
+    melody.forEach(function (m) {
+      var osc1 = ctx.createOscillator();
+      var osc2 = ctx.createOscillator();
+      var gain = ctx.createGain();
 
       osc1.type = "triangle";
       osc2.type = "sine";
       osc1.frequency.setValueAtTime(m.freq, now + m.start);
       osc2.frequency.setValueAtTime(m.freq * 1.5, now + m.start);
 
-      const subGain = ctx.createGain();
+      var subGain = ctx.createGain();
       subGain.gain.setValueAtTime(0.14, now + m.start);
 
       gain.gain.setValueAtTime(0.001, now + m.start);
@@ -412,7 +413,7 @@ window.HG = window.HG || {};
    */
   function humanizeTeacherText(rawText) {
     if (!rawText) return "";
-    const trimmed = String(rawText).trim();
+    var trimmed = String(rawText).trim();
     if (PHONETIC_MAP[trimmed]) {
       return PHONETIC_MAP[trimmed];
     }
@@ -426,7 +427,7 @@ window.HG = window.HG || {};
       .replace(/우와\s*[,!.]*/g, "우와아! ")
       .replace(/와아\s*[,!.]*/g, "와아! ")
       // 단독 자모(ㄱ~ㅎ, ㅏ~ㅣ)가 문장 안에 있을 경우 한글 발음으로 치환
-      .replace(/[ㄱ-ㅎㅏ-ㅣ]/g, (ch) => PHONETIC_MAP[ch] || ch)
+      .replace(/[ㄱ-ㅎㅏ-ㅣ]/g, function (ch) { return PHONETIC_MAP[ch] || ch; })
       // 물결표(~), 가운뎃점(·), 대시(-) 등은 자연스러운 쉼표 호흡으로 변환
       .replace(/[~∼˜·•\-—–:;/|]+/g, ", ")
       // 한글, 영문, 숫자, 기본 문장부호(.,?!)를 제외한 모든 특수문자·이모지 완전 제거
@@ -444,13 +445,13 @@ window.HG = window.HG || {};
    * 학습 단어에는 또박또박하고 다정한 억양을 적용하는 감정 표현 엔진
    */
   function splitIntoEmotionalSegments(text, baseRate, isNeuralOrCloud) {
-    const EXCLAIM_PATTERN = /^(우와아!|와아!|참 잘했어요[!.]?|정말 잘했어요[!.]?|우와아!\s*(잘했어요|맞았어요|멋져요|끝까지 순서대로 참 잘 썼어요)[!.]?|와아!\s*(맞았어요|정답이에요|참 잘했어요)[!.]?|안녕!|안녕하세요[,!]?)\s*(.*)$/;
-    const match = text.match(EXCLAIM_PATTERN);
+    var EXCLAIM_PATTERN = /^(우와아!|와아!|참 잘했어요[!.]?|정말 잘했어요[!.]?|우와아!\s*(잘했어요|맞았어요|멋져요|끝까지 순서대로 참 잘 썼어요)[!.]?|와아!\s*(맞았어요|정답이에요|참 잘했어요)[!.]?|안녕!|안녕하세요[,!]?)\s*(.*)$/;
+    var match = text.match(EXCLAIM_PATTERN);
 
     if (match && match[1]) {
-      const emotionPart = match[1].trim().replace(/[,]+$/, "!");
-      const contentPart = (match[4] || "").trim();
-      const segments = [
+      var emotionPart = match[1].trim().replace(/[,]+$/, "!");
+      var contentPart = (match[4] || "").trim();
+      var segments = [
         {
           text: emotionPart,
           // 감탄/칭찬 구간: 실제 유치원 선생님이 기뻐하며 칭찬하듯 밝고 생동감 있는 톤
@@ -470,11 +471,9 @@ window.HG = window.HG || {};
     }
 
     // 질문형/권유형 문장("~볼까요?", "~눌러요!")은 끝음 올라가는 다정한 억양 부여
-    const isQuestionOrInvite = /[?!]$/.test(text);
+    var isQuestionOrInvite = /[?!]$/.test(text);
     return [
-      {
-        text,
-        pitch: isNeuralOrCloud ? (isQuestionOrInvite ? 1.07 : 1.03) : 1.08,
+      { text: text, pitch: isNeuralOrCloud ? (isQuestionOrInvite ? 1.07 : 1.03) : 1.08,
         rate: baseRate
       }
     ];
@@ -483,27 +482,27 @@ window.HG = window.HG || {};
   /**
    * 한글 음성 발음 (커스텀 mp3 폴백 + 감정 억양이 살아있는 여선생님 Web Speech API)
    */
-  function speak(text, options = {}) {
+  function speak(text, options) {
+    if (options === void 0) options = {};
     if (!text || masterVolume <= 0) {
       if (options.onEnd) options.onEnd();
       return;
     }
 
-    const spokenText = humanizeTeacherText(text);
+    var spokenText = humanizeTeacherText(text);
 
     // 1순위: 커스텀 mp3 파일이 지정된 경우 우선 재생
     if (options.audioSrc) {
-      const audio = new Audio(options.audioSrc);
+      var audio = new Audio(options.audioSrc);
       audio.volume = masterVolume;
-      audio.onended = () => {
+      audio.onended = function () {
         if (options.onEnd) options.onEnd();
       };
-      audio.onerror = () => {
+      audio.onerror = function () {
         speakWithWebSpeech(spokenText, options);
       };
-      audio.play().catch(() => {
-        speakWithWebSpeech(spokenText, options);
-      });
+      try { var _p = audio.play(); if (_p && _p.catch) _p.catch(function () {
+        speakWithWebSpeech(spokenText, options); }); } catch (e) { speakWithWebSpeech(spokenText, options); }
       return;
     }
 
@@ -511,7 +510,8 @@ window.HG = window.HG || {};
     speakWithWebSpeech(spokenText, options);
   }
 
-  function speakWithWebSpeech(spokenText, options = {}) {
+  function speakWithWebSpeech(spokenText, options) {
+    if (options === void 0) options = {};
     if (!("speechSynthesis" in window)) {
       if (options.onEnd) options.onEnd();
       return;
@@ -521,19 +521,19 @@ window.HG = window.HG || {};
       window.speechSynthesis.cancel();
       loadKoreanVoice();
 
-      const vName = koreanVoice ? (koreanVoice.name || "").toLowerCase() : "";
-      const isNeuralOrCloud =
+      var vName = koreanVoice ? (koreanVoice.name || "").toLowerCase() : "";
+      var isNeuralOrCloud =
         vName.includes("natural") ||
         vName.includes("online") ||
         vName.includes("google") ||
         vName.includes("premium") ||
         vName.includes("enhanced");
 
-      const baseRate = options.rate || (isNeuralOrCloud ? Math.max(0.92, speechRate) : speechRate);
-      const segments = splitIntoEmotionalSegments(spokenText, baseRate, isNeuralOrCloud);
+      var baseRate = options.rate || (isNeuralOrCloud ? Math.max(0.92, speechRate) : speechRate);
+      var segments = splitIntoEmotionalSegments(spokenText, baseRate, isNeuralOrCloud);
 
-      segments.forEach((seg, idx) => {
-        const utter = new SpeechSynthesisUtterance(seg.text);
+      segments.forEach(function (seg, idx) {
+        var utter = new SpeechSynthesisUtterance(seg.text);
         utter.lang = "ko-KR";
         if (koreanVoice) {
           utter.voice = koreanVoice;
@@ -580,20 +580,20 @@ window.HG = window.HG || {};
   }
 
   HG.Audio = {
-    unlockAudio,
-    playTap,
-    playPop,
-    playCorrect,
-    playEncourage,
-    playSparkle,
-    playFanfare,
-    speak,
-    setVolume,
-    getVolume,
-    setSpeechRate,
-    getSpeechRate,
-    getKoreanVoices,
-    setPreferredVoice,
-    getPreferredVoice
+    unlockAudio: unlockAudio,
+    playTap: playTap,
+    playPop: playPop,
+    playCorrect: playCorrect,
+    playEncourage: playEncourage,
+    playSparkle: playSparkle,
+    playFanfare: playFanfare,
+    speak: speak,
+    setVolume: setVolume,
+    getVolume: getVolume,
+    setSpeechRate: setSpeechRate,
+    getSpeechRate: getSpeechRate,
+    getKoreanVoices: getKoreanVoices,
+    setPreferredVoice: setPreferredVoice,
+    getPreferredVoice: getPreferredVoice
   };
 })(window.HG);

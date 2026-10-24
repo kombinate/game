@@ -23,8 +23,11 @@
   --card-border: #FFE0B2;
   --shadow-soft: 0 6px 16px rgba(62, 39, 35, 0.12);
   --shadow-btn: 0 5px 0 rgba(0, 0, 0, 0.16);
+  --radius-xl: 16px;
   --radius-xl: clamp(16px, 3dvh, 28px);
+  --radius-lg: 12px;
   --radius-lg: clamp(12px, 2.4dvh, 20px);
+  --radius-md: 10px;
   --radius-md: clamp(10px, 2dvh, 16px);
   --font-kid: "Apple SD Gothic Neo", "NanumSquareRound", "Malgun Gothic", "맑은 고딕", sans-serif;
 }
@@ -50,8 +53,8 @@ body {
   overscroll-behavior: none;
   touch-action: none;
   background: linear-gradient(180deg, #81D4FA 0%, #FFF59D 100%);
-  font-family: var(--font-kid);
-  color: var(--text-dark);
+  font-family: sans-serif;
+  color: #3E2723;
 }
 
 button {
@@ -64,7 +67,7 @@ button {
 }
 
 button:focus-visible {
-  outline: 3px dashed var(--primary);
+  outline: 3px dashed #FF7043;
   outline-offset: 2px;
 }
 
@@ -78,10 +81,12 @@ button:focus-visible {
 #portrait-overlay {
   display: none;
   position: fixed;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   z-index: 9999;
   background: linear-gradient(145deg, #FF8A65, #FFD54F);
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   padding: 20px;
   text-align: center;
@@ -89,6 +94,7 @@ button:focus-visible {
 
 @media (orientation: portrait) {
   body:not(.force-portrait) #portrait-overlay {
+    display: -webkit-flex;
     display: flex;
   }
 }
@@ -112,14 +118,14 @@ button:focus-visible {
 
 .rotate-card h2 {
   font-size: 22px;
-  color: var(--text-dark);
+  color: #3E2723;
   margin-bottom: 10px;
   word-break: keep-all;
 }
 
 .rotate-card p {
   font-size: 15px;
-  color: var(--text-muted);
+  color: #5D4037;
   line-height: 1.45;
   margin-bottom: 18px;
   word-break: keep-all;
@@ -141,26 +147,44 @@ button:focus-visible {
    16:9 반응형 스테이지 컨테이너 (모바일 visualViewport 실시간 대응)
    ========================================================================== */
 #app-wrapper {
+  width: 100%;
+  height: 100%;
   width: var(--app-width, 100vw);
   height: var(--app-height, 100dvh);
+  display: -webkit-flex;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
+  -webkit-justify-content: center;
   justify-content: center;
-  padding: clamp(0px, 1vmin, 14px);
+  padding: 0;
   overflow: hidden;
 }
 
 #stage-container {
   position: relative;
+  width: 100%;
+  height: 100%;
   width: min(100%, calc((var(--app-height, 100dvh) - 12px) * 16 / 9));
   height: min(100%, calc((var(--app-width, 100vw) - 12px) * 9 / 16));
   max-width: 1440px;
   max-height: 810px;
+  background: #E1F5FE;
+  background: -webkit-linear-gradient(top, #B3E5FC 0%, #FFFDF5 58%, #C8E6C9 100%);
   background: linear-gradient(180deg, #B3E5FC 0%, #FFFDF5 58%, #C8E6C9 100%);
+  border-radius: 20px;
+  border-radius: 14px;
   border-radius: clamp(14px, 2.5vmin, 32px);
   box-shadow: 0 14px 40px rgba(45, 65, 85, 0.22), inset 0 0 0 4px #FFFFFF;
   overflow: hidden;
+  display: -webkit-flex;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
+  -webkit-flex-direction: column;
   flex-direction: column;
 }
 
@@ -182,7 +206,7 @@ button:focus-visible {
 /* 배경 구름/언덕 장식 */
 .bg-decorations {
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
@@ -259,42 +283,63 @@ button:focus-visible {
 #top-bar {
   position: relative;
   z-index: 10;
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: space-between;
   justify-content: space-between;
+  padding: 4px clamp(8px, 1.8vw, 22px);
   padding: clamp(4px, 1.2dvh, 12px) clamp(8px, 1.8vw, 22px);
   background: rgba(255, 255, 255, 0.86);
   backdrop-filter: blur(8px);
+  border-bottom: 2px solid rgba(255, 224, 178, 0.9);
   border-bottom: clamp(2px, 0.6dvh, 4px) solid rgba(255, 224, 178, 0.9);
+  gap: 6px;
   gap: clamp(6px, 1vw, 12px);
 }
 
 .top-left,
 .top-right {
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  gap: 5px;
   gap: clamp(5px, 1vw, 12px);
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
 }
 
 .icon-btn {
+  min-width: 38px;
   min-width: clamp(38px, 10.5dvh, 60px);
+  min-height: 36px;
   min-height: clamp(36px, 10dvh, 58px);
   padding: 2px 6px;
+  border-radius: 12px;
   border-radius: clamp(12px, 2.5dvh, 20px);
   background: #FFFFFF;
+  border: 2px solid #FFE082;
   border: clamp(2px, 0.5dvh, 4px) solid #FFE082;
   box-shadow: 0 clamp(2px, 0.6dvh, 4px) 0 #FFD54F;
+  display: -webkit-inline-flex;
   display: inline-flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .icon-btn svg {
+  width: 22px;
   width: clamp(22px, 6dvh, 36px);
+  height: 22px;
   height: clamp(22px, 6dvh, 36px);
 }
 
@@ -310,18 +355,25 @@ button:focus-visible {
 }
 
 .stage-pill {
+  min-height: 36px;
   min-height: clamp(36px, 10dvh, 58px);
   padding: 0 clamp(10px, 1.6vw, 18px);
+  border-radius: 12px;
   border-radius: clamp(12px, 2.5dvh, 20px);
   background: linear-gradient(180deg, #FFD54F, #FFB300);
+  border: 2px solid #FFFFFF;
   border: clamp(2px, 0.5dvh, 3px) solid #FFFFFF;
   box-shadow: 0 clamp(2px, 0.6dvh, 4px) 0 #FF8F00;
   color: #3E2723;
+  font-size: 12px;
   font-size: clamp(12px, 3.2dvh, 19px);
   font-weight: 900;
   white-space: nowrap;
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
+  display: -webkit-inline-flex;
   display: inline-flex;
+  -webkit-align-items: center;
   align-items: center;
   gap: 6px;
 }
@@ -333,26 +385,38 @@ button:focus-visible {
 
 /* 별 5개 보상 게이지 */
 #round-progress {
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  gap: 3px;
   gap: clamp(3px, 0.8vw, 8px);
   background: #FFFFFF;
+  padding: 3px clamp(8px, 1.4vw, 14px);
   padding: clamp(3px, 0.8dvh, 7px) clamp(8px, 1.4vw, 14px);
   border-radius: 999px;
+  border: 2px solid #FFE0B2;
   border: clamp(2px, 0.5dvh, 4px) solid #FFE0B2;
   box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.06);
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
 }
 
 .star-slot {
+  width: 20px;
   width: clamp(20px, 5.8dvh, 38px);
+  height: 20px;
   height: clamp(20px, 5.8dvh, 38px);
   border-radius: 50%;
   background: #F5F5F5;
   color: #D7CCC8;
+  font-size: 13px;
   font-size: clamp(13px, 3.8dvh, 25px);
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s, color 0.3s;
 }
@@ -365,6 +429,7 @@ button:focus-visible {
 }
 
 .sticker-goal-icon {
+  font-size: 16px;
   font-size: clamp(16px, 4.4dvh, 28px);
   margin-left: 2px;
   line-height: 1;
@@ -372,19 +437,27 @@ button:focus-visible {
 
 /* 스티커북 버튼 */
 .stickerbook-btn {
+  min-height: 36px;
   min-height: clamp(36px, 10dvh, 58px);
   padding: 0 clamp(8px, 1.3vw, 15px);
+  border-radius: 12px;
   border-radius: clamp(12px, 2.5dvh, 20px);
   background: linear-gradient(180deg, #AB47BC, #8E24AA);
+  border: 2px solid #F3E5F5;
   border: clamp(2px, 0.5dvh, 3px) solid #F3E5F5;
   box-shadow: 0 clamp(2px, 0.6dvh, 4px) 0 #6A1B9A;
   color: #FFFFFF;
+  display: -webkit-inline-flex;
   display: inline-flex;
+  -webkit-align-items: center;
   align-items: center;
+  gap: 4px;
   gap: clamp(4px, 0.6vw, 7px);
+  font-size: 11px;
   font-size: clamp(11px, 3dvh, 17px);
   font-weight: 900;
   white-space: nowrap;
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
 }
 
@@ -398,6 +471,7 @@ button:focus-visible {
   color: #3E2723;
   padding: 1px 7px;
   border-radius: 999px;
+  font-size: 11px;
   font-size: clamp(11px, 2.6dvh, 15px);
   font-weight: 900;
 }
@@ -405,29 +479,40 @@ button:focus-visible {
 /* 부모님 3초 롱프레스 버튼 */
 .parent-lock-btn {
   position: relative;
+  min-width: 46px;
   min-width: clamp(46px, 11dvh, 64px);
+  min-height: 36px;
   min-height: clamp(36px, 10dvh, 58px);
   padding: 2px 8px;
+  border-radius: 12px;
   border-radius: clamp(12px, 2.5dvh, 20px);
   background: #ECEFF1;
+  border: 2px solid #CFD8DC;
   border: clamp(2px, 0.5dvh, 3px) solid #CFD8DC;
   color: #455A64;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   gap: 1px;
   overflow: hidden;
   white-space: nowrap;
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
 }
 
 .lock-icon {
+  font-size: 13px;
   font-size: clamp(13px, 3.6dvh, 19px);
   line-height: 1;
 }
 
 .lock-hint {
+  font-size: 8px;
   font-size: clamp(8px, 2dvh, 10px);
   font-weight: 800;
   white-space: nowrap;
@@ -435,7 +520,7 @@ button:focus-visible {
 
 .hold-progress-ring {
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
@@ -450,7 +535,7 @@ button:focus-visible {
 
 .ring-fill {
   fill: none;
-  stroke: var(--primary);
+  stroke: #FF7043;
   stroke-width: 5;
   stroke-linecap: round;
   stroke-dasharray: 113.1;
@@ -464,42 +549,72 @@ button:focus-visible {
 #main-area {
   position: relative;
   z-index: 5;
+  -webkit-flex: 1 1 0;
+  -webkit-flex: 1 1 0;
   flex: 1 1 0;
+  height: 82%;
   min-height: 0;
-  display: grid;
-  grid-template-columns: clamp(130px, 21vw, 265px) 1fr;
+  display: -webkit-flex;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: row;
+  -webkit-flex-direction: row;
+  flex-direction: row;
+  gap: 10px;
+  gap: 6px;
   gap: clamp(6px, 1.4vw, 20px);
+  padding: 8px 12px;
+  padding: 5px clamp(8px, 1.8vw, 22px);
   padding: clamp(5px, 1.4dvh, 16px) clamp(8px, 1.8vw, 22px);
   overflow: hidden;
 }
 
 #mascot-panel {
+  width: 22%;
+  min-width: 130px;
+  max-width: 265px;
+  height: 100%;
+  margin-right: 8px;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: space-between;
   justify-content: space-between;
   background: rgba(255, 255, 255, 0.82);
-  border-radius: var(--radius-xl);
+  border-radius: 22px;
+  border: 2px solid #FFFFFF;
   border: clamp(2px, 0.5dvh, 4px) solid #FFFFFF;
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 6px 16px rgba(62, 39, 35, 0.12);
+  padding: 6px;
   padding: clamp(6px, 1.5dvh, 16px);
   min-height: 0;
   overflow: hidden;
+  gap: 4px;
   gap: clamp(4px, 1dvh, 10px);
 }
 
 .speech-bubble {
   position: relative;
   width: 100%;
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
   background: #FFFFFF;
+  border: 2px solid #FFB74D;
   border: clamp(2px, 0.5dvh, 4px) solid #FFB74D;
+  border-radius: 12px;
   border-radius: clamp(12px, 2.5dvh, 22px);
+  padding: 5px clamp(6px, 1vw, 12px);
   padding: clamp(5px, 1.4dvh, 14px) clamp(6px, 1vw, 12px);
   box-shadow: 0 4px 10px rgba(255, 152, 0, 0.14);
   min-height: 0;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   text-align: center;
 }
@@ -516,19 +631,24 @@ button:focus-visible {
 }
 
 #speech-text {
+  font-size: 11px;
   font-size: clamp(11px, 2.9dvh, 18px);
   font-weight: 800;
   line-height: 1.28;
-  color: var(--text-dark);
+  color: #3E2723;
   word-break: keep-all;
 }
 
 #mascot-stage {
+  -webkit-flex: 1 1 0;
   flex: 1 1 0;
   min-height: 0;
   width: 100%;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   cursor: pointer;
   overflow: hidden;
@@ -543,11 +663,14 @@ button:focus-visible {
 }
 
 .mascot-name-tag {
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
   background: linear-gradient(180deg, #FFD54F, #FFB300);
   color: #3E2723;
   font-weight: 900;
+  font-size: 10px;
   font-size: clamp(10px, 2.5dvh, 15px);
+  padding: 3px clamp(10px, 1.4vw, 16px);
   padding: clamp(3px, 0.8dvh, 6px) clamp(10px, 1.4vw, 16px);
   border-radius: 999px;
   white-space: nowrap;
@@ -555,13 +678,21 @@ button:focus-visible {
 
 /* 우측 뷰 패널 */
 #view-panel {
+  -webkit-flex: 1 1 0;
+  -webkit-flex: 1 1 0;
+  flex: 1 1 0;
+  width: 76%;
+  height: 100%;
   position: relative;
   background: rgba(255, 255, 255, 0.88);
-  border-radius: var(--radius-xl);
+  border-radius: 22px;
+  border: 2px solid #FFFFFF;
   border: clamp(2px, 0.6dvh, 5px) solid #FFFFFF;
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 6px 16px rgba(62, 39, 35, 0.12);
   overflow: hidden;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
   min-height: 0;
 }
@@ -570,15 +701,20 @@ button:focus-visible {
   display: none;
   width: 100%;
   height: 100%;
+  padding: 6px clamp(8px, 1.8vw, 20px);
   padding: clamp(6px, 1.8dvh, 20px) clamp(8px, 1.8vw, 20px);
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-justify-content: space-between;
   justify-content: space-between;
+  gap: 4px;
   gap: clamp(4px, 1.2dvh, 12px);
   min-height: 0;
   overflow: hidden;
 }
 
 .screen.active {
+  display: -webkit-flex;
   display: flex;
 }
 
@@ -587,26 +723,38 @@ button:focus-visible {
    ========================================================================== */
 .home-header {
   text-align: center;
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
 }
 
 .game-title {
+  font-size: 16px;
   font-size: clamp(16px, 4.8dvh, 36px);
   font-weight: 900;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
+  gap: 3px;
   gap: clamp(3px, 0.5vw, 6px);
   flex-wrap: nowrap;
   white-space: nowrap;
 }
 
 .title-pop {
+  display: -webkit-inline-flex;
   display: inline-flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
+  width: 24px;
   width: clamp(24px, 6.2dvh, 46px);
+  height: 24px;
   height: clamp(24px, 6.2dvh, 46px);
+  border-radius: 8px;
   border-radius: clamp(8px, 1.8dvh, 14px);
   color: #FFFFFF;
   box-shadow: 0 clamp(2px, 0.5dvh, 4px) 0 rgba(0, 0, 0, 0.15);
@@ -617,13 +765,15 @@ button:focus-visible {
 .title-pop.c4 { background: #29B6F6; transform: rotate(6deg); margin-right: 4px; }
 
 .title-main {
-  color: var(--text-dark);
+  color: #3E2723;
   text-shadow: 0 2px 0 #FFE082;
 }
 
 .home-subtitle {
+  font-size: 10px;
   font-size: clamp(10px, 2.5dvh, 16px);
-  color: var(--text-muted);
+  color: #5D4037;
+  margin-top: 1px;
   margin-top: clamp(1px, 0.5dvh, 4px);
   font-weight: 700;
   white-space: nowrap;
@@ -631,34 +781,60 @@ button:focus-visible {
 
 /* 단계 선택 바 */
 .stage-selector-bar {
+  -webkit-flex-shrink: 0;
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  display: -webkit-flex;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: row;
+  -webkit-flex-direction: row;
+  flex-direction: row;
+  -webkit-justify-content: space-between;
+  -webkit-justify-content: space-between;
+  justify-content: space-between;
+  gap: 6px;
+  gap: 4px;
   gap: clamp(4px, 1vw, 12px);
-  margin: 0;
+  margin: 4px 0;
 }
 
 .stage-tab {
+  -webkit-flex: 1 1 0;
+  -webkit-flex: 1 1 0;
+  flex: 1 1 0;
+  width: 19%;
+  margin: 0 2px;
+  min-height: 34px;
   min-height: clamp(34px, 10.5dvh, 62px);
+  border-radius: 10px;
   border-radius: clamp(10px, 2.2dvh, 18px);
   background: #FFF8E1;
+  border: 2px solid #FFE082;
   border: clamp(2px, 0.5dvh, 3px) solid #FFE082;
-  color: var(--text-dark);
+  color: #3E2723;
+  font-size: 11px;
   font-size: clamp(11px, 2.8dvh, 17px);
   font-weight: 900;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   gap: 1px;
+  padding: 2px 4px;
   padding: clamp(2px, 0.8dvh, 6px) 4px;
   white-space: nowrap;
   transition: transform 0.15s, background 0.15s;
 }
 
 .stage-tab span {
+  font-size: 9px;
   font-size: clamp(9px, 2.1dvh, 13px);
-  color: var(--text-muted);
+  color: #5D4037;
   font-weight: 700;
 }
 
@@ -676,25 +852,49 @@ button:focus-visible {
 
 /* 미니게임 카드 4종 (모바일 다크모드 반전 방지용 선명한 채도 + 높이 자동 맞춤) */
 .game-cards-grid {
+  -webkit-flex: 1 1 0;
+  -webkit-flex: 1 1 0;
   flex: 1 1 0;
+  height: 55%;
   min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: -webkit-flex;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: row;
+  -webkit-flex-direction: row;
+  flex-direction: row;
+  -webkit-justify-content: space-between;
+  -webkit-justify-content: space-between;
+  justify-content: space-between;
+  gap: 8px;
+  gap: 6px;
   gap: clamp(6px, 1.3vw, 16px);
 }
 
 .game-mode-card {
+  -webkit-flex: 1 1 0;
+  -webkit-flex: 1 1 0;
+  flex: 1 1 0;
+  width: 24%;
+  margin: 0 2px;
   position: relative;
   min-height: 0;
   height: 100%;
+  border-radius: 14px;
   border-radius: clamp(14px, 2.8dvh, 24px);
+  padding: 4px clamp(4px, 1vw, 12px);
   padding: clamp(4px, 1.4dvh, 16px) clamp(4px, 1vw, 12px);
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: space-evenly;
   justify-content: space-evenly;
   text-align: center;
   color: #3E2723;
+  border: 2px solid #FFFFFF;
   border: clamp(2px, 0.5dvh, 4px) solid #FFFFFF;
   box-shadow: 0 clamp(3px, 0.8dvh, 7px) 0 rgba(0, 0, 0, 0.14), 0 8px 16px rgba(0, 0, 0, 0.08);
   transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -717,12 +917,15 @@ button:focus-visible {
   display: inline-block;
   background: rgba(0, 0, 0, 0.18);
   color: #FFFFFF;
+  padding: 1px clamp(7px, 1vw, 11px);
   padding: clamp(1px, 0.4dvh, 4px) clamp(7px, 1vw, 11px);
   border-radius: 999px;
+  font-size: 9px;
   font-size: clamp(9px, 2.1dvh, 13px);
   font-weight: 900;
   line-height: 1.2;
   white-space: nowrap;
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
 }
 
@@ -732,14 +935,17 @@ button:focus-visible {
 }
 
 .card-illust {
+  font-size: 22px;
   font-size: clamp(22px, 7.2dvh, 56px);
   line-height: 1;
   margin: 0;
   filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.15));
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
 }
 
 .card-title {
+  font-size: 12px;
   font-size: clamp(12px, 3.2dvh, 21px);
   font-weight: 900;
   line-height: 1.15;
@@ -753,6 +959,7 @@ button:focus-visible {
 }
 
 .card-desc {
+  font-size: 9px;
   font-size: clamp(9px, 2.2dvh, 14px);
   font-weight: 800;
   opacity: 0.95;
@@ -776,46 +983,69 @@ button:focus-visible {
   width: 100%;
   height: 100%;
   min-height: 0;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-justify-content: space-between;
   justify-content: space-between;
   overflow: hidden;
 }
 
 .game-header-bar {
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: space-between;
   justify-content: space-between;
+  gap: 6px;
   gap: clamp(6px, 1.2vw, 12px);
   background: #FFF8E1;
+  border: 2px solid #FFE082;
   border: clamp(2px, 0.5dvh, 3px) solid #FFE082;
+  border-radius: 12px;
   border-radius: clamp(12px, 2.5dvh, 20px);
+  padding: 4px clamp(8px, 1.6vw, 18px);
   padding: clamp(4px, 1.1dvh, 10px) clamp(8px, 1.6vw, 18px);
+  margin-bottom: 4px;
   margin-bottom: clamp(4px, 1.1dvh, 10px);
   z-index: 3;
 }
 
 .game-prompt-title {
+  font-size: 12px;
   font-size: clamp(12px, 3.2dvh, 22px);
   font-weight: 900;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  gap: 6px;
   gap: clamp(6px, 1vw, 10px);
   min-width: 0;
   flex-wrap: wrap;
 }
 
 .prompt-target-badge {
+  display: -webkit-inline-flex;
   display: inline-flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
+  min-width: 38px;
   min-width: clamp(38px, 9dvh, 62px);
+  min-height: 28px;
   min-height: clamp(28px, 7.5dvh, 48px);
   padding: 2px clamp(8px, 1.4vw, 15px);
   background: linear-gradient(180deg, #FF8A65, #FF7043);
   color: #FFFFFF;
+  border-radius: 10px;
   border-radius: clamp(10px, 2dvh, 16px);
+  font-size: 15px;
   font-size: clamp(15px, 4.4dvh, 30px);
   font-weight: 900;
   box-shadow: 0 clamp(2px, 0.5dvh, 4px) 0 #D84315;
@@ -823,19 +1053,26 @@ button:focus-visible {
 }
 
 .btn-sound-prompt {
+  min-width: 48px;
   min-width: clamp(48px, 10dvh, 64px);
+  min-height: 32px;
   min-height: clamp(32px, 8.5dvh, 52px);
   padding: 0 clamp(10px, 1.5vw, 16px);
+  border-radius: 10px;
   border-radius: clamp(10px, 2.2dvh, 18px);
   background: linear-gradient(180deg, #4FC3F7, #0288D1);
   color: #FFFFFF;
+  font-size: 11px;
   font-size: clamp(11px, 2.9dvh, 17px);
   font-weight: 900;
   box-shadow: 0 clamp(2px, 0.5dvh, 4px) 0 #01579B;
+  display: -webkit-inline-flex;
   display: inline-flex;
+  -webkit-align-items: center;
   align-items: center;
   gap: 5px;
   white-space: nowrap;
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
 }
 
@@ -849,22 +1086,31 @@ button:focus-visible {
    ========================================================================== */
 .balloon-stage {
   position: relative;
+  -webkit-flex: 1 1 0;
   flex: 1 1 0;
   min-height: 0;
   width: 100%;
+  border-radius: 14px;
   border-radius: clamp(14px, 2.6dvh, 22px);
   background: linear-gradient(180deg, #E1F5FE 0%, #FFFDE7 100%);
+  border: 2px dashed #81D4FA;
   border: clamp(2px, 0.5dvh, 3px) dashed #81D4FA;
   overflow: hidden;
 }
 
 .balloon-item {
   position: absolute;
+  width: 58px;
   width: clamp(58px, 19dvh, 128px);
+  height: 72px;
   height: clamp(72px, 23dvh, 156px);
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   cursor: pointer;
   user-select: none;
@@ -878,10 +1124,14 @@ button:focus-visible {
   width: 100%;
   height: 85%;
   border-radius: 50% 50% 48% 48% / 55% 55% 45% 45%;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   box-shadow: inset -8px -10px 16px rgba(0, 0, 0, 0.14), 0 6px 12px rgba(0, 0, 0, 0.12);
+  border: 2px solid rgba(255, 255, 255, 0.85);
   border: clamp(2px, 0.5dvh, 4px) solid rgba(255, 255, 255, 0.85);
 }
 
@@ -901,18 +1151,21 @@ button:focus-visible {
   content: "▲";
   position: absolute;
   bottom: -9px;
+  font-size: 9px;
   font-size: clamp(9px, 2dvh, 14px);
   color: inherit;
 }
 
 .balloon-string {
   width: 2px;
+  height: 12px;
   height: clamp(12px, 3dvh, 22px);
   background: rgba(62, 39, 35, 0.45);
   margin-top: 2px;
 }
 
 .balloon-label {
+  font-size: 18px;
   font-size: clamp(18px, 5.8dvh, 42px);
   font-weight: 900;
   color: #FFFFFF;
@@ -925,27 +1178,45 @@ button:focus-visible {
    미니게임 2: 낱말 카드 짝 맞추기 (match.js)
    ========================================================================== */
 .match-board {
+  -webkit-flex: 1 1 0;
+  -webkit-flex: 1 1 0;
   flex: 1 1 0;
+  height: 80%;
   min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: clamp(6px, 1.8dvh, 18px);
+  display: -webkit-flex;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  -webkit-justify-content: space-between;
+  -webkit-justify-content: space-between;
+  justify-content: space-between;
+  -webkit-align-content: space-between;
+  align-content: space-between;
   padding: 2px;
 }
 
 .match-card {
+  width: 32%;
+  height: 47%;
   position: relative;
   min-height: 0;
   height: 100%;
+  border-radius: 14px;
   border-radius: clamp(14px, 2.8dvh, 24px);
   background: #FFFFFF;
+  border: 2px solid #FFE082;
   border: clamp(2px, 0.6dvh, 5px) solid #FFE082;
   box-shadow: 0 clamp(3px, 0.8dvh, 6px) 0 #FFD54F, 0 6px 12px rgba(0, 0, 0, 0.08);
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
+  padding: 4px;
   padding: clamp(4px, 1.2dvh, 10px);
   overflow: hidden;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s, background 0.2s;
@@ -979,11 +1250,17 @@ button:focus-visible {
 }
 
 .match-svg-wrap {
+  width: 34px;
   width: clamp(34px, 12.5dvh, 92px);
+  height: 34px;
   height: clamp(34px, 12.5dvh, 92px);
+  -webkit-flex-shrink: 1;
   flex-shrink: 1;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
 }
 
@@ -993,58 +1270,77 @@ button:focus-visible {
 }
 
 .match-pic-hint {
+  font-size: 10px;
   font-size: clamp(10px, 2.4dvh, 15px);
-  color: var(--text-muted);
+  color: #5D4037;
   font-weight: 800;
+  margin-top: 2px;
   margin-top: clamp(2px, 0.6dvh, 6px);
   white-space: nowrap;
 }
 
 .match-pic-word {
+  display: -webkit-inline-flex;
   display: inline-flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   gap: 2px;
+  font-size: 13px;
   font-size: clamp(13px, 3.8dvh, 25px);
   font-weight: 900;
-  color: var(--text-dark);
+  color: #3E2723;
+  margin-top: 2px;
   margin-top: clamp(2px, 0.6dvh, 6px);
   white-space: nowrap;
 }
 
 .match-first-highlight {
+  display: -webkit-inline-flex;
   display: inline-flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   background: linear-gradient(180deg, #FF8A65, #FF7043);
   color: #FFFFFF;
   padding: 1px clamp(5px, 1vw, 9px);
+  border-radius: 6px;
   border-radius: clamp(6px, 1.2dvh, 10px);
   box-shadow: 0 2px 0 #D84315;
 }
 
 .match-blank-box {
+  display: -webkit-inline-flex;
   display: inline-flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
+  min-width: 20px;
   min-width: clamp(20px, 5.5dvh, 36px);
+  height: 20px;
   height: clamp(20px, 5.5dvh, 36px);
   border: 2px dashed #FF7043;
   background: #FFF3E0;
   color: #FF7043;
+  border-radius: 6px;
   border-radius: clamp(6px, 1.2dvh, 10px);
   font-weight: 900;
 }
 
 .match-word-text {
+  font-size: 20px;
   font-size: clamp(20px, 6.8dvh, 48px);
   font-weight: 900;
-  color: var(--text-dark);
+  color: #3E2723;
   line-height: 1.1;
   white-space: nowrap;
 }
 
 .match-sub-phonetic {
+  font-size: 10px;
   font-size: clamp(10px, 2.6dvh, 16px);
   font-weight: 800;
   color: #D84315;
@@ -1056,25 +1352,46 @@ button:focus-visible {
    미니게임 3: 손가락 따라쓰기 (trace.js)
    ========================================================================== */
 .trace-workspace {
+  -webkit-flex: 1 1 0;
+  -webkit-flex: 1 1 0;
   flex: 1 1 0;
+  height: 80%;
   min-height: 0;
-  display: grid;
-  grid-template-columns: 1fr clamp(115px, 24%, 230px);
+  display: -webkit-flex;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: row;
+  -webkit-flex-direction: row;
+  flex-direction: row;
+  gap: 10px;
+  gap: 8px;
   gap: clamp(8px, 1.8vw, 20px);
+  -webkit-align-items: stretch;
+  -webkit-align-items: stretch;
   align-items: stretch;
 }
 
 .trace-canvas-wrap {
+  -webkit-flex: 1 1 0;
+  -webkit-flex: 1 1 0;
+  flex: 1 1 0;
+  width: 72%;
+  margin-right: 8px;
   position: relative;
   width: 100%;
   height: 100%;
   min-height: 0;
   background: #FFFDF9;
+  border: 3px solid #AED581;
   border: clamp(3px, 0.6dvh, 5px) solid #AED581;
+  border-radius: 14px;
   border-radius: clamp(14px, 2.8dvh, 26px);
   box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   overflow: hidden;
 }
@@ -1087,32 +1404,49 @@ button:focus-visible {
 }
 
 .trace-side-panel {
+  width: 26%;
+  min-width: 115px;
+  max-width: 230px;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  gap: 6px;
   gap: clamp(6px, 1.5dvh, 12px);
   height: 100%;
   min-height: 0;
+  -webkit-justify-content: space-between;
   justify-content: space-between;
 }
 
 .trace-word-card {
+  -webkit-flex: 1 1 0;
   flex: 1 1 0;
   min-height: 0;
   background: #FFFFFF;
+  border: 2px solid #FFE082;
   border: clamp(2px, 0.5dvh, 4px) solid #FFE082;
+  border-radius: 14px;
   border-radius: clamp(14px, 2.5dvh, 22px);
+  padding: 6px;
   padding: clamp(6px, 1.5dvh, 14px);
   text-align: center;
   box-shadow: 0 clamp(2px, 0.6dvh, 5px) 0 #FFD54F;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   overflow: hidden;
 }
 
 .trace-word-illust {
+  width: 34px;
   width: clamp(34px, 11.5dvh, 82px);
+  height: 34px;
   height: clamp(34px, 11.5dvh, 82px);
   margin: 0 auto clamp(2px, 0.6dvh, 6px);
 }
@@ -1123,15 +1457,18 @@ button:focus-visible {
 }
 
 .trace-word-label {
+  font-size: 14px;
   font-size: clamp(14px, 4dvh, 26px);
   font-weight: 900;
   white-space: nowrap;
 }
 
 .trace-meter-wrap {
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
   background: #ECEFF1;
   border-radius: 999px;
+  height: 16px;
   height: clamp(16px, 4dvh, 26px);
   padding: 3px;
   overflow: hidden;
@@ -1147,15 +1484,21 @@ button:focus-visible {
 }
 
 .trace-btn-group {
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
+  display: -webkit-flex;
   display: flex;
   gap: 6px;
 }
 
 .btn-trace-action {
+  -webkit-flex: 1;
   flex: 1;
+  min-height: 34px;
   min-height: clamp(34px, 9.5dvh, 60px);
+  border-radius: 10px;
   border-radius: clamp(10px, 2.2dvh, 18px);
+  font-size: 12px;
   font-size: clamp(12px, 3dvh, 17px);
   font-weight: 900;
   background: linear-gradient(180deg, #FFE082, #FFB74D);
@@ -1169,37 +1512,59 @@ button:focus-visible {
    미니게임 4: 글자 조립하기 (build.js)
    ========================================================================== */
 .build-workspace {
+  -webkit-flex: 1 1 0;
   flex: 1 1 0;
   min-height: 0;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-justify-content: space-between;
   justify-content: space-between;
+  gap: 6px;
   gap: clamp(6px, 1.8dvh, 16px);
 }
 
 .build-equation-zone {
+  -webkit-flex: 1 1 0;
   flex: 1 1 0;
   min-height: 0;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
+  gap: 6px;
   gap: clamp(6px, 1.8vw, 22px);
   background: #F3FAFF;
+  border: 2px dashed #81D4FA;
   border: clamp(2px, 0.5dvh, 4px) dashed #81D4FA;
+  border-radius: 14px;
   border-radius: clamp(14px, 2.8dvh, 26px);
+  padding: 6px;
   padding: clamp(6px, 1.4dvh, 12px);
 }
 
 .build-slot {
+  width: 48px;
   width: clamp(48px, 15.5dvh, 124px);
+  height: 48px;
   height: clamp(48px, 15.5dvh, 124px);
+  border-radius: 12px;
   border-radius: clamp(12px, 2.8dvh, 24px);
   background: #FFFFFF;
+  border: 2px dashed #B0BEC5;
   border: clamp(2px, 0.5dvh, 4px) dashed #B0BEC5;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
+  font-size: 20px;
   font-size: clamp(20px, 6.8dvh, 54px);
   font-weight: 900;
   color: #90A4AE;
@@ -1238,6 +1603,7 @@ button:focus-visible {
 }
 
 .build-slot-caption {
+  font-size: 8px;
   font-size: clamp(8px, 2dvh, 13px);
   font-weight: 800;
   margin-top: 1px;
@@ -1245,24 +1611,33 @@ button:focus-visible {
 }
 
 .build-operator {
+  font-size: 18px;
   font-size: clamp(18px, 5dvh, 40px);
   font-weight: 900;
   color: #78909C;
 }
 
 .build-result-box {
+  width: 54px;
   width: clamp(54px, 17.5dvh, 142px);
+  height: 54px;
   height: clamp(54px, 17.5dvh, 142px);
+  border-radius: 14px;
   border-radius: clamp(14px, 3dvh, 28px);
   background: linear-gradient(145deg, #FFF8E1, #FFECB3);
+  border: 3px solid #FFB300;
   border: clamp(3px, 0.6dvh, 5px) solid #FFB300;
   box-shadow: 0 clamp(3px, 0.8dvh, 7px) 0 #FFA000;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
+  font-size: 24px;
   font-size: clamp(24px, 8dvh, 64px);
   font-weight: 900;
-  color: var(--text-dark);
+  color: #3E2723;
 }
 
 .build-result-box.completed {
@@ -1271,25 +1646,38 @@ button:focus-visible {
 }
 
 .build-choices-tray {
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
+  gap: 6px;
   gap: clamp(6px, 1.6vw, 18px);
   flex-wrap: nowrap;
   padding: 2px;
 }
 
 .jamo-block-btn {
+  min-width: 44px;
   min-width: clamp(44px, 13dvh, 102px);
+  min-height: 38px;
   min-height: clamp(38px, 11.5dvh, 88px);
+  border-radius: 12px;
   border-radius: clamp(12px, 2.6dvh, 22px);
+  font-size: 18px;
   font-size: clamp(18px, 5.8dvh, 42px);
   font-weight: 900;
   color: #FFFFFF;
+  display: -webkit-inline-flex;
   display: inline-flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.85);
   border: clamp(2px, 0.5dvh, 4px) solid rgba(255, 255, 255, 0.85);
   transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
   touch-action: none;
@@ -1318,9 +1706,13 @@ button:focus-visible {
    3. 내 스티커북 화면
    ========================================================================== */
 .stickerbook-header {
+  -webkit-flex-shrink: 0;
   flex-shrink: 0;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: space-between;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 6px;
@@ -1328,22 +1720,26 @@ button:focus-visible {
 }
 
 .stickerbook-header h2 {
+  font-size: 15px;
   font-size: clamp(15px, 3.8dvh, 25px);
   font-weight: 900;
 }
 
 .stickerbook-header p {
+  font-size: 11px;
   font-size: clamp(11px, 2.6dvh, 15px);
-  color: var(--text-muted);
+  color: #5D4037;
   font-weight: 700;
 }
 
 .sticker-grid {
+  -webkit-flex: 1 1 0;
   flex: 1 1 0;
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   grid-auto-rows: minmax(clamp(68px, 22dvh, 110px), 1fr);
+  gap: 6px;
   gap: clamp(6px, 1.4vmin, 14px);
   overflow-y: auto;
   padding: 4px;
@@ -1351,13 +1747,19 @@ button:focus-visible {
 }
 
 .sticker-card-item {
+  border-radius: 14px;
   border-radius: clamp(14px, 2.5dvh, 22px);
   background: #FFFDF7;
+  border: 2px solid #FFE082;
   border: clamp(2px, 0.5dvh, 4px) solid #FFE082;
   box-shadow: 0 clamp(2px, 0.6dvh, 4px) 0 #FFD54F;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   padding: 6px;
   cursor: pointer;
@@ -1373,7 +1775,9 @@ button:focus-visible {
 }
 
 .sticker-svg-box {
+  width: 34px;
   width: clamp(34px, 10.5dvh, 74px);
+  height: 34px;
   height: clamp(34px, 10.5dvh, 74px);
 }
 
@@ -1383,6 +1787,7 @@ button:focus-visible {
 }
 
 .sticker-name {
+  font-size: 10px;
   font-size: clamp(10px, 2.4dvh, 14px);
   font-weight: 900;
   margin-top: 4px;
@@ -1395,21 +1800,28 @@ button:focus-visible {
    ========================================================================== */
 .modal-overlay {
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   z-index: 100;
   background: rgba(38, 50, 56, 0.62);
   backdrop-filter: blur(6px);
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
+  padding: 8px;
   padding: clamp(8px, 2dvh, 20px);
 }
 
 .modal-card {
   background: #FFFFFF;
+  border-radius: 18px;
   border-radius: clamp(18px, 3.5dvh, 32px);
+  border: 3px solid #FFE082;
   border: clamp(3px, 0.7dvh, 6px) solid #FFE082;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  padding: 12px;
   padding: clamp(12px, 2.8dvh, 28px);
   max-width: 640px;
   width: 100%;
@@ -1423,8 +1835,11 @@ button:focus-visible {
   position: relative;
   z-index: 2;
   background: linear-gradient(180deg, #FFFDF7 0%, #FFF8E1 100%);
+  border: 3px solid #FFD54F;
   border: clamp(3px, 0.7dvh, 6px) solid #FFD54F;
+  border-radius: 18px;
   border-radius: clamp(18px, 3.5dvh, 34px);
+  padding: 10px;
   padding: clamp(10px, 2.5dvh, 28px);
   max-width: 500px;
   width: 100%;
@@ -1439,25 +1854,36 @@ button:focus-visible {
   display: inline-block;
   background: linear-gradient(180deg, #FF8A65, #FF7043);
   color: #FFFFFF;
+  font-size: 13px;
   font-size: clamp(13px, 3.2dvh, 21px);
   font-weight: 900;
+  padding: 4px clamp(14px, 2.5vw, 24px);
   padding: clamp(4px, 1dvh, 8px) clamp(14px, 2.5vw, 24px);
   border-radius: 999px;
   box-shadow: 0 3px 0 #D84315;
+  margin-bottom: 6px;
   margin-bottom: clamp(6px, 1.5dvh, 12px);
 }
 
 .reward-sticker-showcase {
+  width: 76px;
   width: clamp(76px, 22dvh, 155px);
+  height: 76px;
   height: clamp(76px, 22dvh, 155px);
   margin: 4px auto clamp(6px, 1.5dvh, 12px);
   background: #FFFFFF;
+  border-radius: 16px;
   border-radius: clamp(16px, 3dvh, 28px);
+  border: 3px solid #FFCA28;
   border: clamp(3px, 0.6dvh, 5px) solid #FFCA28;
   box-shadow: 0 8px 20px rgba(255, 179, 0, 0.25);
+  padding: 8px;
   padding: clamp(8px, 1.8dvh, 16px);
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   animation: stickerDance 1.2s ease-in-out infinite;
 }
@@ -1468,20 +1894,25 @@ button:focus-visible {
 }
 
 .reward-sticker-title {
+  font-size: 16px;
   font-size: clamp(16px, 4dvh, 26px);
   font-weight: 900;
   margin-bottom: 4px;
 }
 
 .reward-sticker-desc {
+  font-size: 12px;
   font-size: clamp(12px, 2.8dvh, 16px);
-  color: var(--text-muted);
+  color: #5D4037;
   font-weight: 700;
+  margin-bottom: 8px;
   margin-bottom: clamp(8px, 2dvh, 16px);
 }
 
 .reward-actions {
+  display: -webkit-flex;
   display: flex;
+  -webkit-justify-content: center;
   justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
@@ -1489,9 +1920,12 @@ button:focus-visible {
 
 .btn-primary-large,
 .btn-secondary-large {
+  min-height: 38px;
   min-height: clamp(38px, 10dvh, 58px);
   padding: 0 clamp(16px, 2.5vw, 24px);
+  border-radius: 12px;
   border-radius: clamp(12px, 2.5dvh, 20px);
+  font-size: 13px;
   font-size: clamp(13px, 3.2dvh, 19px);
   font-weight: 900;
 }
@@ -1510,8 +1944,11 @@ button:focus-visible {
 
 /* 부모님 모달 */
 .parent-modal-header {
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: space-between;
   justify-content: space-between;
   margin-bottom: 10px;
   padding-bottom: 8px;
@@ -1519,28 +1956,37 @@ button:focus-visible {
 }
 
 .parent-modal-header h2 {
+  font-size: 16px;
   font-size: clamp(16px, 3.8dvh, 22px);
 }
 
 .btn-close-round {
+  width: 36px;
   width: clamp(36px, 9dvh, 50px);
+  height: 36px;
   height: clamp(36px, 9dvh, 50px);
   border-radius: 50%;
   background: #ECEFF1;
+  font-size: 16px;
   font-size: clamp(16px, 3.6dvh, 20px);
   font-weight: 900;
   color: #455A64;
 }
 
 .parent-settings-body {
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
   gap: 10px;
 }
 
 .setting-row {
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: space-between;
   justify-content: space-between;
   gap: 12px;
   background: #FAFAFA;
@@ -1551,16 +1997,20 @@ button:focus-visible {
 }
 
 .setting-label {
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
   gap: 2px;
 }
 
 .setting-label strong {
+  font-size: 13px;
   font-size: clamp(13px, 3dvh, 15px);
 }
 
 .setting-label span {
+  font-size: 11px;
   font-size: clamp(11px, 2.4dvh, 13px);
   color: #757575;
 }
@@ -1579,7 +2029,9 @@ button:focus-visible {
 
 .volume-control-wrap,
 .timer-control-wrap {
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
   gap: 8px;
 }
@@ -1629,7 +2081,7 @@ button:focus-visible {
 .toggle-slider {
   position: absolute;
   cursor: pointer;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   background-color: #CFD8DC;
   transition: 0.25s;
   border-radius: 28px;
@@ -1659,12 +2111,14 @@ button:focus-visible {
 }
 .rest-card h2 {
   margin: 8px 0 6px;
+  font-size: 16px;
   font-size: clamp(16px, 4dvh, 22px);
 }
 .rest-card p {
-  color: var(--text-muted);
+  color: #5D4037;
   line-height: 1.45;
   margin-bottom: 14px;
+  font-size: 12px;
   font-size: clamp(12px, 3dvh, 15px);
 }
 
@@ -1674,6 +2128,7 @@ body.force-portrait #main-area {
   grid-template-rows: auto 1fr;
 }
 body.force-portrait #mascot-panel {
+  -webkit-flex-direction: row;
   flex-direction: row;
   padding: 6px 12px;
   gap: 10px;
@@ -1681,6 +2136,7 @@ body.force-portrait #mascot-panel {
 body.force-portrait #mascot-stage {
   width: 64px;
   height: 64px;
+  -webkit-flex: 0 0 64px;
   flex: 0 0 64px;
 }
 body.force-portrait .speech-bubble::after {

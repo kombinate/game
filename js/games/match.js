@@ -15,20 +15,20 @@ window.HG.Games = window.HG.Games || {};
 (function (HG) {
   "use strict";
 
-  let mountEl = null;
-  let stageNum = 1;
-  let onSolvedCallback = null;
-  let selectedCard = null;
-  let matchedCount = 0;
-  let totalPairs = 3;
-  let currentPairs = [];
-  let isBusy = false;
+  var mountEl = null;
+  var stageNum = 1;
+  var onSolvedCallback = null;
+  var selectedCard = null;
+  var matchedCount = 0;
+  var totalPairs = 3;
+  var currentPairs = [];
+  var isBusy = false;
 
   function shuffle(arr) {
-    const copy = arr.slice();
-    for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
+    var copy = arr.slice();
+    for (var i = copy.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var _tmp = copy[i]; copy[i] = copy[j]; copy[j] = _tmp;
     }
     return copy;
   }
@@ -60,7 +60,7 @@ window.HG.Games = window.HG.Games || {};
   }
 
   function repeatPrompt() {
-    const guide = getStageHeaderGuide();
+    var guide = getStageHeaderGuide();
     HG.Character.say(guide);
     HG.Audio.speak(guide);
   }
@@ -69,37 +69,25 @@ window.HG.Games = window.HG.Games || {};
    * 상단 그림 카드 아래에 표시할 직관적인 단어 힌트 HTML 생성
    */
   function buildPicCardWordHintHtml(item) {
-    const word = item.word || "";
-    const firstChar = word.charAt(0);
-    const restChars = word.slice(1);
+    var word = item.word || "";
+    var firstChar = word.charAt(0);
+    var restChars = word.slice(1);
 
     if (stageNum === 1 || stageNum === 2) {
       // 1~2단계: 첫 글자를 주황색 박스로 강조하여 왜 아래 모음/자음과 짝인지 즉시 이해되도록 표시
-      return `
-        <div class="match-pic-word">
-          <span class="match-first-highlight">${firstChar}</span><span>${restChars}</span>
-        </div>
-      `;
+      return ("\n        <div class=\"match-pic-word\">\n          <span class=\"match-first-highlight\">" + (firstChar) + "</span><span>" + (restChars) + "</span>\n        </div>\n      ");
     }
 
     if (stageNum === 3) {
       // 3단계: 2글자 이상 단어는 첫 글자를 [ ? ] 빈칸으로 보여주고, 1글자 단어는 [ ? ]와 힌트 표시
       if (word.length >= 2) {
-        return `
-          <div class="match-pic-word">
-            <span class="match-blank-box">?</span><span>${restChars}</span>
-          </div>
-        `;
+        return ("\n          <div class=\"match-pic-word\">\n            <span class=\"match-blank-box\">?</span><span>" + (restChars) + "</span>\n          </div>\n        ");
       }
-      return `
-        <div class="match-pic-word">
-          <span class="match-blank-box">?</span>
-        </div>
-      `;
+      return ("\n        <div class=\"match-pic-word\">\n          <span class=\"match-blank-box\">?</span>\n        </div>\n      ");
     }
 
     // 4~5단계: 그림만 보고 아래의 전체 낱말 카드를 찾도록 유도
-    return `<div class="match-pic-hint">🔊 눌러서 소리 듣기</div>`;
+    return ("<div class=\"match-pic-hint\">🔊 눌러서 소리 듣기</div>");
   }
 
   /**
@@ -107,18 +95,12 @@ window.HG.Games = window.HG.Games || {};
    */
   function buildWordCardInnerHtml(item) {
     if (stageNum === 1) {
-      return `
-        <div class="match-word-text">${item.char}</div>
-        <div class="match-sub-phonetic">(${item.tts} 소리)</div>
-      `;
+      return ("\n        <div class=\"match-word-text\">" + (item.char) + "</div>\n        <div class=\"match-sub-phonetic\">(" + (item.tts) + " 소리)</div>\n      ");
     }
     if (stageNum === 2) {
-      return `
-        <div class="match-word-text">${item.char}</div>
-        <div class="match-sub-phonetic">(${item.tts})</div>
-      `;
+      return ("\n        <div class=\"match-word-text\">" + (item.char) + "</div>\n        <div class=\"match-sub-phonetic\">(" + (item.tts) + ")</div>\n      ");
     }
-    return `<div class="match-word-text">${item.char}</div>`;
+    return ("<div class=\"match-word-text\">" + (item.char) + "</div>");
   }
 
   function nextQuestion() {
@@ -127,18 +109,18 @@ window.HG.Games = window.HG.Games || {};
     matchedCount = 0;
     isBusy = false;
 
-    const pool = HG.Words.getStageItems(stageNum);
-    const uniquePool = [];
-    const usedIcons = new Set();
-    const usedChars = new Set();
-    const usedRestChars = new Set();
+    var pool = HG.Words.getStageItems(stageNum);
+    var uniquePool = [];
+    var usedIcons = new Set();
+    var usedChars = new Set();
+    var usedRestChars = new Set();
 
-    for (let attempt = 0; attempt < pool.length * 2 && uniquePool.length < totalPairs; attempt++) {
-      const candidate = HG.Words.drawNextItem
+    for (var attempt = 0; attempt < pool.length * 2 && uniquePool.length < totalPairs; attempt++) {
+      var candidate = HG.Words.drawNextItem
         ? HG.Words.drawNextItem(stageNum, "match")
         : pool[Math.floor(Math.random() * pool.length)];
-      const restPart = stageNum === 3 ? candidate.word.slice(1) : "";
-      const restOk = !restPart || !usedRestChars.has(restPart) || attempt >= pool.length;
+      var restPart = stageNum === 3 ? candidate.word.slice(1) : "";
+      var restOk = !restPart || !usedRestChars.has(restPart) || attempt >= pool.length;
       if (
         !usedChars.has(candidate.char) &&
         (!usedIcons.has(candidate.icon) || attempt >= pool.length) &&
@@ -155,62 +137,41 @@ window.HG.Games = window.HG.Games || {};
     }
     currentPairs = uniquePool;
 
-    const picCards = shuffle(
-      currentPairs.map((item, idx) => ({
-        pairId: idx,
-        type: "pic",
-        item
-      }))
+    var picCards = shuffle(
+      currentPairs.map(function (item, idx) { return { pairId: idx, type: "pic", item: item }; })
     );
-    const wordCards = shuffle(
-      currentPairs.map((item, idx) => ({
-        pairId: idx,
-        type: "word",
-        item
-      }))
+    var wordCards = shuffle(
+      currentPairs.map(function (item, idx) { return { pairId: idx, type: "word", item: item }; })
     );
 
-    const allCards = [...picCards, ...wordCards];
+    var allCards = picCards.concat(wordCards);
 
-    mountEl.innerHTML = `
-      <div class="game-header-bar">
-        <div class="game-prompt-title">
-          <span>${getStageHeaderGuide()}</span>
-        </div>
-        <button id="btn-match-listen" class="btn-sound-prompt" type="button">
-          🔊 설명 듣기
-        </button>
-      </div>
-      <div id="match-board" class="match-board"></div>
-    `;
+    mountEl.innerHTML = ("\n      <div class=\"game-header-bar\">\n        <div class=\"game-prompt-title\">\n          <span>" + (getStageHeaderGuide()) + "</span>\n        </div>\n        <button id=\"btn-match-listen\" class=\"btn-sound-prompt\" type=\"button\">\n          🔊 설명 듣기\n        </button>\n      </div>\n      <div id=\"match-board\" class=\"match-board\"></div>\n    ");
 
-    const listenBtn = document.getElementById("btn-match-listen");
+    var listenBtn = document.getElementById("btn-match-listen");
     if (listenBtn) {
-      listenBtn.addEventListener("click", () => {
+      listenBtn.addEventListener("click", function () {
         HG.Audio.playTap();
         repeatPrompt();
       });
     }
 
-    const boardEl = document.getElementById("match-board");
+    var boardEl = document.getElementById("match-board");
 
-    allCards.forEach((cardData) => {
-      const btn = document.createElement("button");
+    allCards.forEach(function (cardData) {
+      var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = `match-card card-type-${cardData.type}`;
+      btn.className = ("match-card card-type-" + (cardData.type));
       btn.dataset.pairId = String(cardData.pairId);
       btn.dataset.cardType = cardData.type;
 
       if (cardData.type === "pic") {
-        btn.innerHTML = `
-          <div class="match-svg-wrap">${HG.Words.getIllustSvg(cardData.item.icon)}</div>
-          ${buildPicCardWordHintHtml(cardData.item)}
-        `;
+        btn.innerHTML = ("\n          <div class=\"match-svg-wrap\">" + (HG.Words.getIllustSvg(cardData.item.icon)) + "</div>\n          " + (buildPicCardWordHintHtml(cardData.item)) + "\n        ");
       } else {
         btn.innerHTML = buildWordCardInnerHtml(cardData.item);
       }
 
-      btn.addEventListener("click", () => handleCardTap(btn, cardData));
+      btn.addEventListener("click", function () { handleCardTap(btn, cardData); });
       boardEl.appendChild(btn);
     });
 
@@ -225,7 +186,7 @@ window.HG.Games = window.HG.Games || {};
     // 카드를 눌렀을 때 단계에 맞게 친절하게 발음 안내
     if (cardData.type === "pic") {
       if (stageNum === 1 || stageNum === 2) {
-        HG.Audio.speak(`${cardData.item.word}, 첫소리는 ${cardData.item.tts}`, {
+        HG.Audio.speak(((cardData.item.word) + ", 첫소리는 " + (cardData.item.tts)), {
           audioSrc: cardData.item.audioSrc
         });
       } else {
@@ -258,28 +219,28 @@ window.HG.Games = window.HG.Games || {};
     btnEl.classList.add("selected");
 
     if (selectedCard.data.pairId === cardData.pairId) {
-      const prevEl = selectedCard.el;
-      const matchedItem = cardData.item;
+      var prevEl = selectedCard.el;
+      var matchedItem = cardData.item;
       selectedCard = null;
 
-      setTimeout(() => {
+      setTimeout(function () {
         prevEl.classList.remove("selected");
         btnEl.classList.remove("selected");
         prevEl.classList.add("matched");
         btnEl.classList.add("matched");
 
         // 3단계에서 빈칸 [ ? ] 이었던 그림 카드도 완성된 전체 단어로 업데이트
-        const picEl = cardData.type === "pic" ? btnEl : prevEl;
-        const wordWrap = picEl.querySelector(".match-pic-word, .match-pic-hint");
+        var picEl = cardData.type === "pic" ? btnEl : prevEl;
+        var wordWrap = picEl.querySelector(".match-pic-word, .match-pic-hint");
         if (wordWrap) {
-          wordWrap.innerHTML = `<span class="match-first-highlight">${matchedItem.word.charAt(0)}</span><span>${matchedItem.word.slice(1)}</span>`;
+          wordWrap.innerHTML = ("<span class=\"match-first-highlight\">" + (matchedItem.word.charAt(0)) + "</span><span>" + (matchedItem.word.slice(1)) + "</span>");
         }
 
         HG.Audio.playCorrect();
-        const successSpeech =
+        var successSpeech =
           matchedItem.char === matchedItem.word
-            ? `와아! 맞았어요! ${matchedItem.word}!`
-            : `와아! 맞았어요! ${matchedItem.word} 할 때, ${matchedItem.tts}!`;
+            ? ("와아! 맞았어요! " + (matchedItem.word) + "!")
+            : ("와아! 맞았어요! " + (matchedItem.word) + " 할 때, " + (matchedItem.tts) + "!");
         HG.Audio.speak(successSpeech);
 
         matchedCount++;
@@ -287,15 +248,15 @@ window.HG.Games = window.HG.Games || {};
 
         if (matchedCount >= totalPairs) {
           HG.Character.reactHappy("우와! 세 쌍의 짝꿍 카드를 모두 정확하게 찾았어! 최고야! 🎉");
-          setTimeout(() => {
+          setTimeout(function () {
             if (onSolvedCallback) onSolvedCallback();
           }, 1050);
         } else {
-          HG.Character.reactHappy(`맞았어! "${matchedItem.word}"의 짝꿍 "${matchedItem.char}" 카드를 잘 찾았네!`);
+          HG.Character.reactHappy(("맞았어! \"" + (matchedItem.word) + "\"의 짝꿍 \"" + (matchedItem.char) + "\" 카드를 잘 찾았네!"));
         }
       }, 280);
     } else {
-      const prevEl = selectedCard.el;
+      var prevEl = selectedCard.el;
       selectedCard = null;
 
       HG.Audio.playEncourage();
@@ -304,7 +265,7 @@ window.HG.Games = window.HG.Games || {};
       prevEl.classList.add("gentle-wobble");
       btnEl.classList.add("gentle-wobble");
 
-      setTimeout(() => {
+      setTimeout(function () {
         prevEl.classList.remove("selected", "gentle-wobble");
         btnEl.classList.remove("selected", "gentle-wobble");
         isBusy = false;
@@ -313,9 +274,9 @@ window.HG.Games = window.HG.Games || {};
   }
 
   HG.Games.match = {
-    start,
-    stop,
-    repeatPrompt,
-    nextQuestion
+    start: start,
+    stop: stop,
+    repeatPrompt: repeatPrompt,
+    nextQuestion: nextQuestion
   };
 })(window.HG);
