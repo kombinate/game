@@ -25,7 +25,8 @@ window.HG = window.HG || {};
     totalSolved: 0,
     unlockedStickers: ["stk_bear"], // 기본 환영 스티커 1장 지급
     restTimerEnabled: true,
-    bgmEnabled: true
+    bgmEnabled: true,
+    bgmVolume: 55
   };
 
   var state = loadState();
@@ -67,6 +68,10 @@ window.HG = window.HG || {};
     HG.Audio.setSpeechRate(state.speechRate);
     if (state.preferredVoiceURI) {
       HG.Audio.setPreferredVoice(state.preferredVoiceURI);
+    }
+    if (HG.Audio.setBgmVolume) {
+      var initBgmVol = typeof state.bgmVolume === "number" ? state.bgmVolume : 55;
+      HG.Audio.setBgmVolume(initBgmVol / 100);
     }
     if (HG.Audio.setBgmEnabled) {
       HG.Audio.setBgmEnabled(state.bgmEnabled !== false);
@@ -636,6 +641,8 @@ window.HG = window.HG || {};
     var btnTestVoice = document.getElementById("btn-test-voice");
     var chkBgm = document.getElementById("chk-bgm-enabled");
     var btnNextBgm = document.getElementById("btn-next-bgm");
+    var inputBgmVol = document.getElementById("input-bgm-volume");
+    var labelBgmVol = document.getElementById("label-bgm-volume");
     var chkTimer = document.getElementById("chk-rest-timer");
     var btnResetTimer = document.getElementById("btn-reset-timer");
     var btnResetProgress = document.getElementById("btn-reset-progress");
@@ -668,6 +675,25 @@ window.HG = window.HG || {};
           HG.Audio.nextBgmTrack();
         }
         syncBgmUI();
+      });
+    }
+
+    if (inputBgmVol && labelBgmVol) {
+      var curBgmVol = typeof state.bgmVolume === "number" ? state.bgmVolume : 55;
+      inputBgmVol.value = String(curBgmVol);
+      labelBgmVol.textContent = (curBgmVol + "%");
+      inputBgmVol.addEventListener("input", function () {
+        state.bgmVolume = Number(inputBgmVol.value);
+        labelBgmVol.textContent = (state.bgmVolume + "%");
+        if (HG.Audio.setBgmVolume) {
+          HG.Audio.setBgmVolume(state.bgmVolume / 100);
+        }
+        if (state.bgmVolume > 0 && state.bgmEnabled === false) {
+          state.bgmEnabled = true;
+          if (HG.Audio.setBgmEnabled) HG.Audio.setBgmEnabled(true);
+          syncBgmUI();
+        }
+        saveState();
       });
     }
 

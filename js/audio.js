@@ -21,6 +21,7 @@ window.HG = window.HG || {};
 
   // 배경음악(BGM) 상태 변수
   var bgmEnabled = true;
+  var bgmVolume = 0.55; // 동요 배경음악 볼륨 (0.0 ~ 1.0, 기본 55%)
   var bgmPlaying = false;
   var bgmStepTimer = null;
   var bgmDuckTimer = null;
@@ -793,14 +794,14 @@ window.HG = window.HG || {};
    * 부드럽고 따뜻한 오르골/첼레스타 1음 합성
    */
   function playMusicBoxNote(freq, durSec, bassFreq) {
-    if (!bgmEnabled || masterVolume <= 0 || document.hidden) return;
+    if (!bgmEnabled || bgmVolume <= 0 || document.hidden) return;
     var ctx = getContext();
     if (!ctx) return;
 
     var now = ctx.currentTime;
     // 선생님 음성 안내(TTS) 중에는 배경음악 볼륨을 자동으로 낮춤 (Auto-Ducking)
     var duckFactor = isSpeaking ? 0.25 : 1.0;
-    var noteVol = 0.058 * masterVolume * duckFactor;
+    var noteVol = 0.11 * bgmVolume * duckFactor;
 
     if (freq > 0) {
       var oscMain = ctx.createOscillator();
@@ -920,6 +921,14 @@ window.HG = window.HG || {};
     return bgmEnabled;
   }
 
+  function setBgmVolume(val0to1) {
+    bgmVolume = Math.max(0, Math.min(1, Number(val0to1)));
+  }
+
+  function getBgmVolume() {
+    return bgmVolume;
+  }
+
   function nextBgmTrack() {
     pickNextRandomSong();
     if (bgmEnabled && isUnlocked) {
@@ -993,6 +1002,8 @@ window.HG = window.HG || {};
     stopBgm: stopBgm,
     setBgmEnabled: setBgmEnabled,
     isBgmEnabled: isBgmEnabled,
+    setBgmVolume: setBgmVolume,
+    getBgmVolume: getBgmVolume,
     nextBgmTrack: nextBgmTrack,
     getCurrentBgmTitle: getCurrentBgmTitle
   };
