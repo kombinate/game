@@ -1,0 +1,1559 @@
+/* ==========================================================================
+   방글방글 한글 놀이터 - 메인 스타일시트 (16:9 가로형 반응형 + 유아 UX 최적화)
+   ========================================================================== */
+
+:root {
+  --bg-sky: #E3F6FF;
+  --bg-cream: #FFFDF5;
+  --primary: #FF7043;
+  --primary-dark: #E64A19;
+  --secondary: #29B6F6;
+  --secondary-dark: #0288D1;
+  --accent-yellow: #FFD54F;
+  --accent-green: #66BB6A;
+  --accent-purple: #AB47BC;
+  --accent-pink: #EC407A;
+  --text-dark: #3E2723;
+  --text-muted: #6D4C41;
+  --card-border: #FFE0B2;
+  --shadow-soft: 0 8px 20px rgba(62, 39, 35, 0.12);
+  --shadow-btn: 0 6px 0 rgba(0, 0, 0, 0.16);
+  --radius-xl: 28px;
+  --radius-lg: 20px;
+  --radius-md: 16px;
+  --font-kid: "Apple SD Gothic Neo", "NanumSquareRound", "Malgun Gothic", "맑은 고딕", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  background: linear-gradient(180deg, #B3E5FC 0%, #FFF9C4 100%);
+  font-family: var(--font-kid);
+  color: var(--text-dark);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  touch-action: manipulation;
+}
+
+button:focus-visible {
+  outline: 4px dashed var(--primary);
+  outline-offset: 2px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ==========================================================================
+   세로 모드 회전 안내 오버레이
+   ========================================================================== */
+#portrait-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: linear-gradient(145deg, #FF8A65, #FFD54F);
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+@media (orientation: portrait) {
+  body:not(.force-portrait) #portrait-overlay {
+    display: flex;
+  }
+}
+
+.rotate-card {
+  background: #FFFFFF;
+  border-radius: var(--radius-xl);
+  padding: 32px 24px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+  border: 6px solid #FFF3E0;
+}
+
+.rotate-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  display: inline-block;
+  animation: tiltPhone 1.8s ease-in-out infinite;
+}
+
+.rotate-card h2 {
+  font-size: 24px;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+  word-break: keep-all;
+}
+
+.rotate-card p {
+  font-size: 16px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 22px;
+  word-break: keep-all;
+}
+
+.btn-secondary-pill {
+  min-height: 54px;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: #FFF3E0;
+  color: var(--text-dark);
+  font-size: 16px;
+  font-weight: 800;
+  border: 3px solid #FFCC80;
+}
+
+/* ==========================================================================
+   16:9 반응형 스테이지 컨테이너
+   ========================================================================== */
+#app-wrapper {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(4px, 1.2vmin, 16px);
+}
+
+#stage-container {
+  position: relative;
+  width: min(100%, calc((100dvh - 16px) * 16 / 9));
+  height: min(100%, calc((100vw - 16px) * 9 / 16));
+  min-width: 640px;
+  min-height: 360px;
+  max-width: 1440px;
+  max-height: 810px;
+  background: linear-gradient(180deg, #DDF4FF 0%, #FFFDF5 62%, #E8F8D8 100%);
+  border-radius: clamp(18px, 2.5vmin, 34px);
+  box-shadow: 0 16px 48px rgba(45, 65, 85, 0.22), inset 0 0 0 6px #FFFFFF;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 작은 모바일 가로 화면 대응 */
+@media (max-width: 920px), (max-height: 500px) {
+  #app-wrapper {
+    padding: 0;
+  }
+  #stage-container {
+    width: 100vw;
+    height: 100dvh;
+    min-width: 0;
+    min-height: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+/* 배경 구름/언덕 장식 */
+.bg-decorations {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.cloud {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  filter: drop-shadow(0 6px 10px rgba(100, 180, 220, 0.15));
+}
+
+.cloud::before,
+.cloud::after {
+  content: "";
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+}
+
+.cloud-1 {
+  width: 130px;
+  height: 44px;
+  top: 12%;
+  left: 8%;
+  animation: floatCloud 18s ease-in-out infinite alternate;
+}
+.cloud-1::before { width: 60px; height: 60px; top: -28px; left: 20px; }
+.cloud-1::after { width: 48px; height: 48px; top: -18px; left: 62px; }
+
+.cloud-2 {
+  width: 160px;
+  height: 52px;
+  top: 8%;
+  right: 14%;
+  animation: floatCloud 24s ease-in-out infinite alternate-reverse;
+}
+.cloud-2::before { width: 72px; height: 72px; top: -34px; left: 28px; }
+.cloud-2::after { width: 56px; height: 56px; top: -22px; left: 82px; }
+
+.cloud-3 {
+  width: 110px;
+  height: 38px;
+  top: 22%;
+  left: 42%;
+  opacity: 0.7;
+  animation: floatCloud 20s ease-in-out infinite alternate;
+}
+.cloud-3::before { width: 50px; height: 50px; top: -22px; left: 18px; }
+
+.bg-hill {
+  position: absolute;
+  bottom: -18%;
+  border-radius: 50%;
+}
+.hill-left {
+  width: 65%;
+  height: 38%;
+  left: -10%;
+  background: #D0F0B8;
+}
+.hill-right {
+  width: 70%;
+  height: 42%;
+  right: -12%;
+  background: #C2E8A7;
+}
+
+/* ==========================================================================
+   상단 바 (최소 64x64 터치 영역 준수)
+   ========================================================================== */
+#top-bar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(6px, 1.4vmin, 14px) clamp(12px, 2.2vmin, 24px);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(8px);
+  border-bottom: 4px solid rgba(255, 224, 178, 0.8);
+  gap: 10px;
+}
+
+.top-left,
+.top-right {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 1.4vmin, 14px);
+}
+
+.icon-btn {
+  min-width: 64px;
+  min-height: 64px;
+  border-radius: 20px;
+  background: #FFFFFF;
+  border: 4px solid #FFE082;
+  box-shadow: 0 5px 0 #FFD54F;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.icon-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #FFD54F;
+}
+
+.tts-btn {
+  border-color: #81D4FA;
+  box-shadow: 0 5px 0 #29B6F6;
+  animation: pulseSoft 2s infinite;
+}
+
+.stage-pill {
+  min-height: 64px;
+  padding: 0 20px;
+  border-radius: 20px;
+  background: #FFF8E1;
+  border: 4px solid #FFCA28;
+  box-shadow: 0 5px 0 #FFB300;
+  color: var(--text-dark);
+  font-size: clamp(15px, 2.1vmin, 20px);
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage-pill:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #FFB300;
+}
+
+/* 별 5개 보상 게이지 */
+#round-progress {
+  display: flex;
+  align-items: center;
+  gap: clamp(4px, 1vmin, 10px);
+  background: #FFF;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 4px solid #FFE0B2;
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.06);
+}
+
+.star-slot {
+  width: clamp(30px, 4.2vmin, 42px);
+  height: clamp(30px, 4.2vmin, 42px);
+  border-radius: 50%;
+  background: #F5F5F5;
+  color: #D7CCC8;
+  font-size: clamp(20px, 2.8vmin, 28px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s, color 0.3s;
+}
+
+.star-slot.filled {
+  background: #FFF8E1;
+  color: #FFB300;
+  transform: scale(1.15) rotate(8deg);
+  text-shadow: 0 2px 6px rgba(255, 179, 0, 0.5);
+}
+
+.sticker-goal-icon {
+  font-size: clamp(22px, 3.2vmin, 32px);
+  margin-left: 4px;
+}
+
+/* 스티커북 버튼 */
+.stickerbook-btn {
+  min-height: 64px;
+  padding: 0 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #AB47BC, #8E24AA);
+  border: 4px solid #F3E5F5;
+  box-shadow: 0 5px 0 #6A1B9A;
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(14px, 2vmin, 18px);
+  font-weight: 900;
+}
+
+.stickerbook-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #6A1B9A;
+}
+
+.sb-count {
+  background: #FFD54F;
+  color: #3E2723;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: clamp(13px, 1.8vmin, 16px);
+  font-weight: 900;
+}
+
+/* 부모님 3초 롱프레스 버튼 */
+.parent-lock-btn {
+  position: relative;
+  min-width: 64px;
+  min-height: 64px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #ECEFF1;
+  border: 3px solid #CFD8DC;
+  color: #546E7A;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.lock-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.lock-hint {
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.hold-progress-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform: rotate(-90deg);
+}
+
+.ring-bg {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 4;
+}
+
+.ring-fill {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 113.1;
+  stroke-dashoffset: 113.1;
+  transition: stroke-dashoffset 0.08s linear;
+}
+
+/* ==========================================================================
+   메인 레이아웃: 좌측 마스코트 + 우측 뷰 패널
+   ========================================================================== */
+#main-area {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  display: grid;
+  grid-template-columns: clamp(175px, 24%, 285px) 1fr;
+  gap: clamp(10px, 1.8vmin, 22px);
+  padding: clamp(8px, 1.6vmin, 18px) clamp(12px, 2.2vmin, 24px);
+  min-height: 0;
+}
+
+#mascot-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: var(--radius-xl);
+  border: 4px solid #FFFFFF;
+  box-shadow: var(--shadow-soft);
+  padding: clamp(10px, 1.8vmin, 18px);
+  min-height: 0;
+}
+
+.speech-bubble {
+  position: relative;
+  width: 100%;
+  background: #FFFFFF;
+  border: 4px solid #FFB74D;
+  border-radius: 22px;
+  padding: clamp(10px, 1.5vmin, 16px);
+  box-shadow: 0 6px 14px rgba(255, 152, 0, 0.14);
+  min-height: clamp(68px, 12vmin, 96px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 14px 12px 0;
+  border-style: solid;
+  border-color: #FFB74D transparent transparent;
+}
+
+#speech-text {
+  font-size: clamp(14px, 2.1vmin, 19px);
+  font-weight: 800;
+  line-height: 1.38;
+  color: var(--text-dark);
+  word-break: keep-all;
+}
+
+#mascot-stage {
+  flex: 1;
+  width: 100%;
+  max-height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  min-height: 120px;
+}
+
+#mascot-stage svg {
+  width: 100%;
+  height: 100%;
+  max-width: 210px;
+  max-height: 220px;
+  overflow: visible;
+}
+
+.mascot-name-tag {
+  background: #FFE0B2;
+  color: #5D4037;
+  font-weight: 900;
+  font-size: clamp(13px, 1.8vmin, 16px);
+  padding: 6px 16px;
+  border-radius: 999px;
+}
+
+/* 우측 뷰 패널 */
+#view-panel {
+  position: relative;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-xl);
+  border: 5px solid #FFFFFF;
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.screen {
+  display: none;
+  width: 100%;
+  height: 100%;
+  padding: clamp(10px, 2vmin, 22px);
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 0;
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* ==========================================================================
+   1. 홈 화면 (미니게임 4종 카드 & 단계 선택)
+   ========================================================================== */
+.home-header {
+  text-align: center;
+}
+
+.game-title {
+  font-size: clamp(22px, 4.2vmin, 38px);
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.title-pop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(32px, 5.2vmin, 48px);
+  height: clamp(32px, 5.2vmin, 48px);
+  border-radius: 14px;
+  color: #FFF;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+}
+.title-pop.c1 { background: #FF7043; transform: rotate(-6deg); }
+.title-pop.c2 { background: #FFCA28; color: #3E2723; transform: rotate(4deg); }
+.title-pop.c3 { background: #66BB6A; transform: rotate(-3deg); }
+.title-pop.c4 { background: #29B6F6; transform: rotate(6deg); margin-right: 8px; }
+
+.title-main {
+  color: var(--text-dark);
+  text-shadow: 0 3px 0 #FFE082;
+}
+
+.home-subtitle {
+  font-size: clamp(13px, 2vmin, 17px);
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-weight: 700;
+}
+
+/* 단계 선택 바 */
+.stage-selector-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: clamp(6px, 1.2vmin, 12px);
+  margin: clamp(6px, 1.4vmin, 14px) 0;
+}
+
+.stage-tab {
+  min-height: 64px;
+  border-radius: 18px;
+  background: #FFF8E1;
+  border: 3px solid #FFE082;
+  color: var(--text-dark);
+  font-size: clamp(13px, 1.9vmin, 17px);
+  font-weight: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.stage-tab span {
+  font-size: clamp(11px, 1.5vmin, 14px);
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.stage-tab.active {
+  background: #FFCA28;
+  border-color: #FFA000;
+  box-shadow: 0 5px 0 #FF8F00;
+  transform: translateY(-2px);
+}
+
+.stage-tab.active span {
+  color: #3E2723;
+}
+
+/* 미니게임 카드 4종 */
+.game-cards-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(8px, 1.6vmin, 18px);
+  min-height: 0;
+}
+
+.game-mode-card {
+  position: relative;
+  border-radius: 24px;
+  padding: clamp(10px, 1.8vmin, 18px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-dark);
+  border: 4px solid #FFF;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.12), 0 12px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-height: 140px;
+}
+
+.game-mode-card:hover,
+.game-mode-card:active {
+  transform: translateY(-5px) scale(1.02);
+}
+
+.card-balloon { background: linear-gradient(180deg, #FFCCBC 0%, #FF8A65 100%); }
+.card-match   { background: linear-gradient(180deg, #FFF59D 0%, #FFD54F 100%); }
+.card-trace   { background: linear-gradient(180deg, #C8E6C9 0%, #81C784 100%); }
+.card-build   { background: linear-gradient(180deg, #B3E5FC 0%, #4FC3F7 100%); }
+
+.card-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: clamp(11px, 1.5vmin, 13px);
+  font-weight: 900;
+}
+
+.card-illust {
+  font-size: clamp(36px, 6.8vmin, 62px);
+  margin: 6px 0;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.12));
+}
+
+.card-title {
+  font-size: clamp(16px, 2.4vmin, 22px);
+  font-weight: 900;
+  margin-bottom: 4px;
+  word-break: keep-all;
+}
+
+.card-desc {
+  font-size: clamp(12px, 1.6vmin, 14px);
+  font-weight: 700;
+  color: rgba(62, 39, 35, 0.85);
+  line-height: 1.3;
+  word-break: keep-all;
+}
+
+/* ==========================================================================
+   2. 미니게임 공통 마운트 및 상단 문제 프롬프트
+   ========================================================================== */
+.game-mount {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.game-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #FFF8E1;
+  border: 3px solid #FFE082;
+  border-radius: 20px;
+  padding: clamp(6px, 1.2vmin, 12px) clamp(12px, 2vmin, 20px);
+  margin-bottom: clamp(6px, 1.2vmin, 12px);
+  z-index: 3;
+}
+
+.game-prompt-title {
+  font-size: clamp(16px, 2.5vmin, 24px);
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.prompt-target-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  min-height: 52px;
+  padding: 4px 16px;
+  background: #FF7043;
+  color: #FFF;
+  border-radius: 16px;
+  font-size: clamp(22px, 3.4vmin, 32px);
+  font-weight: 900;
+  box-shadow: 0 4px 0 #D84315;
+}
+
+.btn-sound-prompt {
+  min-width: 64px;
+  min-height: 56px;
+  padding: 0 18px;
+  border-radius: 18px;
+  background: #29B6F6;
+  color: #FFF;
+  font-size: clamp(14px, 2vmin, 18px);
+  font-weight: 900;
+  box-shadow: 0 4px 0 #0288D1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-sound-prompt:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #0288D1;
+}
+
+/* ==========================================================================
+   미니게임 1: 글자 풍선 터뜨리기 (balloon.js)
+   ========================================================================== */
+.balloon-stage {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #E1F5FE 0%, #FFFDE7 100%);
+  border: 3px dashed #81D4FA;
+  overflow: hidden;
+}
+
+.balloon-item {
+  position: absolute;
+  width: clamp(92px, 14vmin, 132px);
+  height: clamp(112px, 17vmin, 160px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  transition: transform 0.15s ease;
+  will-change: transform, top, left;
+}
+
+.balloon-body {
+  position: relative;
+  width: 100%;
+  height: 85%;
+  border-radius: 50% 50% 48% 48% / 55% 55% 45% 45%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset -10px -12px 20px rgba(0, 0, 0, 0.14), 0 8px 16px rgba(0, 0, 0, 0.12);
+  border: 4px solid rgba(255, 255, 255, 0.85);
+}
+
+.balloon-body::before {
+  content: "";
+  position: absolute;
+  top: 14%;
+  left: 18%;
+  width: 22%;
+  height: 14%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.65);
+  transform: rotate(-30deg);
+}
+
+.balloon-body::after {
+  content: "▲";
+  position: absolute;
+  bottom: -11px;
+  font-size: 14px;
+  color: inherit;
+}
+
+.balloon-string {
+  width: 3px;
+  height: 22px;
+  background: rgba(62, 39, 35, 0.45);
+  margin-top: 4px;
+}
+
+.balloon-label {
+  font-size: clamp(28px, 4.8vmin, 44px);
+  font-weight: 900;
+  color: #FFFFFF;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.22);
+  z-index: 2;
+}
+
+/* ==========================================================================
+   미니게임 2: 낱말 카드 짝 맞추기 (match.js)
+   ========================================================================== */
+.match-board {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: clamp(10px, 2vmin, 20px);
+  padding: 4px;
+  min-height: 0;
+}
+
+.match-card {
+  position: relative;
+  border-radius: 24px;
+  background: #FFFFFF;
+  border: 5px solid #FFE082;
+  box-shadow: 0 7px 0 #FFD54F, 0 10px 18px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  min-height: 90px;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s, background 0.2s;
+}
+
+.match-card.card-type-pic {
+  background: #FFFDF7;
+  border-color: #81D4FA;
+  box-shadow: 0 7px 0 #4FC3F7;
+}
+
+.match-card.card-type-word {
+  background: #FFF9E6;
+  border-color: #FFCC80;
+  box-shadow: 0 7px 0 #FFB74D;
+}
+
+.match-card.selected {
+  transform: translateY(-6px) scale(1.04);
+  border-color: #FF7043;
+  box-shadow: 0 9px 0 #E64A19, 0 0 0 4px rgba(255, 112, 67, 0.25);
+  background: #FFF3E0;
+}
+
+.match-card.matched {
+  background: #E8F5E9;
+  border-color: #66BB6A;
+  box-shadow: 0 4px 0 #43A047;
+  pointer-events: none;
+  opacity: 0.88;
+}
+
+.match-svg-wrap {
+  width: clamp(58px, 10vmin, 96px);
+  height: clamp(58px, 10vmin, 96px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.match-svg-wrap svg {
+  width: 100%;
+  height: 100%;
+}
+
+.match-pic-hint {
+  font-size: clamp(12px, 1.7vmin, 15px);
+  color: var(--text-muted);
+  font-weight: 800;
+  margin-top: 6px;
+}
+
+.match-pic-word {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: clamp(18px, 2.8vmin, 26px);
+  font-weight: 900;
+  color: var(--text-dark);
+  margin-top: 6px;
+}
+
+.match-first-highlight {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #FF7043;
+  color: #FFFFFF;
+  padding: 2px 9px;
+  border-radius: 10px;
+  box-shadow: 0 3px 0 #D84315;
+}
+
+.match-blank-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: clamp(28px, 4.2vmin, 38px);
+  height: clamp(28px, 4.2vmin, 38px);
+  border: 3px dashed #FF7043;
+  background: #FFF3E0;
+  color: #FF7043;
+  border-radius: 10px;
+  font-weight: 900;
+}
+
+.match-word-text {
+  font-size: clamp(30px, 5.2vmin, 50px);
+  font-weight: 900;
+  color: var(--text-dark);
+  line-height: 1.1;
+}
+
+.match-sub-phonetic {
+  font-size: clamp(13px, 1.9vmin, 17px);
+  font-weight: 800;
+  color: #D84315;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   미니게임 3: 손가락 따라쓰기 (trace.js)
+   ========================================================================== */
+.trace-workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr clamp(170px, 28%, 240px);
+  gap: clamp(12px, 2vmin, 22px);
+  min-height: 0;
+  align-items: center;
+}
+
+.trace-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  background: #FFFDF9;
+  border: 5px solid #AED581;
+  border-radius: 26px;
+  box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#trace-canvas {
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.trace-side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  justify-content: center;
+}
+
+.trace-word-card {
+  background: #FFFFFF;
+  border: 4px solid #FFE082;
+  border-radius: 22px;
+  padding: 14px;
+  text-align: center;
+  box-shadow: 0 5px 0 #FFD54F;
+}
+
+.trace-word-illust {
+  width: clamp(54px, 9vmin, 84px);
+  height: clamp(54px, 9vmin, 84px);
+  margin: 0 auto 6px;
+}
+
+.trace-word-label {
+  font-size: clamp(20px, 3vmin, 28px);
+  font-weight: 900;
+}
+
+.trace-meter-wrap {
+  background: #ECEFF1;
+  border-radius: 999px;
+  height: 26px;
+  padding: 4px;
+  overflow: hidden;
+  border: 2px solid #CFD8DC;
+}
+
+.trace-meter-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #66BB6A, #FFEE58);
+  border-radius: 999px;
+  transition: width 0.12s ease;
+}
+
+.trace-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-trace-action {
+  flex: 1;
+  min-height: 64px;
+  border-radius: 18px;
+  font-size: clamp(14px, 2vmin, 17px);
+  font-weight: 900;
+  background: #FFF3E0;
+  border: 3px solid #FFB74D;
+  color: var(--text-dark);
+  box-shadow: 0 4px 0 #FFA726;
+}
+
+.btn-trace-action.primary {
+  background: #66BB6A;
+  border-color: #43A047;
+  color: #FFF;
+  box-shadow: 0 4px 0 #2E7D32;
+}
+
+/* ==========================================================================
+   미니게임 4: 글자 조립하기 (build.js)
+   ========================================================================== */
+.build-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(10px, 1.8vmin, 18px);
+  min-height: 0;
+}
+
+.build-equation-zone {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(10px, 2.2vmin, 24px);
+  background: #F3FAFF;
+  border: 4px dashed #81D4FA;
+  border-radius: 26px;
+  padding: 12px;
+}
+
+.build-slot {
+  width: clamp(82px, 14vmin, 128px);
+  height: clamp(82px, 14vmin, 128px);
+  border-radius: 24px;
+  background: #FFFFFF;
+  border: 4px dashed #B0BEC5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(34px, 5.8vmin, 56px);
+  font-weight: 900;
+  color: #90A4AE;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.build-slot.slot-active {
+  border-color: #FF7043;
+  background: #FFF3E0;
+  color: #FF7043;
+  animation: pulseSoft 1.5s infinite;
+}
+
+.build-slot.slot-filled-cons {
+  border-style: solid;
+  border-color: #29B6F6;
+  background: #E1F5FE;
+  color: #0277BD;
+  box-shadow: 0 6px 0 #4FC3F7;
+}
+
+.build-slot.slot-filled-vowel {
+  border-style: solid;
+  border-color: #EC407A;
+  background: #FCE4EC;
+  color: #AD1457;
+  box-shadow: 0 6px 0 #F48FB1;
+}
+
+.build-slot.slot-filled-jong {
+  border-style: solid;
+  border-color: #66BB6A;
+  background: #E8F5E9;
+  color: #2E7D32;
+  box-shadow: 0 6px 0 #81C784;
+}
+
+.build-slot-caption {
+  font-size: clamp(11px, 1.5vmin, 14px);
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.build-operator {
+  font-size: clamp(28px, 4.5vmin, 42px);
+  font-weight: 900;
+  color: #78909C;
+}
+
+.build-result-box {
+  width: clamp(96px, 16vmin, 148px);
+  height: clamp(96px, 16vmin, 148px);
+  border-radius: 28px;
+  background: linear-gradient(145deg, #FFF8E1, #FFECB3);
+  border: 5px solid #FFB300;
+  box-shadow: 0 8px 0 #FFA000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(42px, 7vmin, 68px);
+  font-weight: 900;
+  color: var(--text-dark);
+}
+
+.build-result-box.completed {
+  background: linear-gradient(145deg, #FFD54F, #FFCA28);
+  animation: popCelebrate 0.6s ease;
+}
+
+.build-choices-tray {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(10px, 2vmin, 20px);
+  flex-wrap: wrap;
+  padding: 6px;
+}
+
+.jamo-block-btn {
+  min-width: clamp(74px, 12vmin, 108px);
+  min-height: clamp(68px, 11vmin, 94px);
+  border-radius: 22px;
+  font-size: clamp(30px, 4.8vmin, 44px);
+  font-weight: 900;
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid rgba(255, 255, 255, 0.85);
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  touch-action: none;
+}
+
+.jamo-block-btn.type-cons {
+  background: linear-gradient(180deg, #4FC3F7, #0288D1);
+  box-shadow: 0 6px 0 #01579B;
+}
+
+.jamo-block-btn.type-vowel {
+  background: linear-gradient(180deg, #F06292, #D81B60);
+  box-shadow: 0 6px 0 #880E4F;
+}
+
+.jamo-block-btn.type-jong {
+  background: linear-gradient(180deg, #66BB6A, #2E7D32);
+  box-shadow: 0 6px 0 #1B5E20;
+}
+
+.jamo-block-btn:active {
+  transform: translateY(4px) scale(0.96);
+}
+
+/* ==========================================================================
+   3. 내 스티커북 화면
+   ========================================================================== */
+.stickerbook-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.stickerbook-header h2 {
+  font-size: clamp(18px, 2.8vmin, 26px);
+  font-weight: 900;
+}
+
+.stickerbook-header p {
+  font-size: clamp(13px, 1.8vmin, 16px);
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.sticker-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-auto-rows: 1fr;
+  gap: clamp(8px, 1.5vmin, 16px);
+  overflow-y: auto;
+  padding: 4px;
+  touch-action: pan-y;
+}
+
+.sticker-card-item {
+  border-radius: 22px;
+  background: #FFFDF7;
+  border: 4px solid #FFE082;
+  box-shadow: 0 5px 0 #FFD54F;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  min-height: 100px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.sticker-card-item.locked {
+  background: #F5F5F5;
+  border: 3px dashed #CFD8DC;
+  box-shadow: none;
+  opacity: 0.65;
+  cursor: default;
+}
+
+.sticker-svg-box {
+  width: clamp(48px, 8.5vmin, 78px);
+  height: clamp(48px, 8.5vmin, 78px);
+}
+
+.sticker-svg-box svg {
+  width: 100%;
+  height: 100%;
+}
+
+.sticker-name {
+  font-size: clamp(12px, 1.7vmin, 15px);
+  font-weight: 900;
+  margin-top: 6px;
+  text-align: center;
+}
+
+/* ==========================================================================
+   모달 공통 (보상 모달, 부모님 설정 모달, 휴식 모달)
+   ========================================================================== */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: rgba(38, 50, 56, 0.62);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-card {
+  background: #FFFFFF;
+  border-radius: 32px;
+  border: 6px solid #FFE082;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  padding: clamp(18px, 3vmin, 32px);
+  max-width: 640px;
+  width: 100%;
+  max-height: 92%;
+  overflow-y: auto;
+}
+
+/* 보상 모달 */
+.reward-modal-card {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(180deg, #FFFDF7 0%, #FFF8E1 100%);
+  border: 6px solid #FFD54F;
+  border-radius: 34px;
+  padding: clamp(18px, 3vmin, 30px);
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  animation: popCelebrate 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.reward-ribbon {
+  display: inline-block;
+  background: #FF7043;
+  color: #FFF;
+  font-size: clamp(16px, 2.4vmin, 22px);
+  font-weight: 900;
+  padding: 8px 24px;
+  border-radius: 999px;
+  box-shadow: 0 4px 0 #D84315;
+  margin-bottom: 14px;
+}
+
+.reward-sticker-showcase {
+  width: clamp(120px, 20vmin, 165px);
+  height: clamp(120px, 20vmin, 165px);
+  margin: 8px auto 14px;
+  background: #FFFFFF;
+  border-radius: 28px;
+  border: 5px solid #FFCA28;
+  box-shadow: 0 10px 24px rgba(255, 179, 0, 0.25);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: stickerDance 1.2s ease-in-out infinite;
+}
+
+.reward-sticker-showcase svg {
+  width: 100%;
+  height: 100%;
+}
+
+.reward-sticker-title {
+  font-size: clamp(20px, 3vmin, 28px);
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
+.reward-sticker-desc {
+  font-size: clamp(14px, 2vmin, 17px);
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.reward-actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.btn-primary-large,
+.btn-secondary-large {
+  min-height: 64px;
+  padding: 0 26px;
+  border-radius: 22px;
+  font-size: clamp(16px, 2.2vmin, 20px);
+  font-weight: 900;
+}
+
+.btn-primary-large {
+  background: #FF7043;
+  color: #FFF;
+  box-shadow: 0 6px 0 #D84315;
+}
+
+.btn-secondary-large {
+  background: #AB47BC;
+  color: #FFF;
+  box-shadow: 0 6px 0 #7B1FA2;
+}
+
+/* 부모님 모달 */
+.parent-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 3px solid #FFF3E0;
+}
+
+.btn-close-round {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #ECEFF1;
+  font-size: 22px;
+  font-weight: 900;
+  color: #455A64;
+}
+
+.parent-settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #FAFAFA;
+  padding: 12px 16px;
+  border-radius: 18px;
+  border: 2px solid #EEEEEE;
+  flex-wrap: wrap;
+}
+
+.setting-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.setting-label strong {
+  font-size: 16px;
+}
+
+.setting-label span {
+  font-size: 13px;
+  color: #757575;
+}
+
+.parent-select {
+  min-height: 48px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  border: 2px solid #BDBDBD;
+  font-size: 15px;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.volume-control-wrap,
+.timer-control-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.timer-remain-badge {
+  background: #E3F2FD;
+  color: #0277BD;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.btn-small-outline,
+.btn-danger-outline {
+  min-height: 48px;
+  padding: 8px 16px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.btn-small-outline {
+  background: #FFF;
+  border: 2px solid #90A4AE;
+  color: #455A64;
+}
+
+.btn-danger-outline {
+  background: #FFEBEE;
+  border: 2px solid #EF5350;
+  color: #C62828;
+}
+
+/* 스위치 토글 */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 56px;
+  height: 32px;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #CFD8DC;
+  transition: 0.25s;
+  border-radius: 32px;
+}
+.toggle-slider::before {
+  position: absolute;
+  content: "";
+  height: 24px;
+  width: 24px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.25s;
+  border-radius: 50%;
+}
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #66BB6A;
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(24px);
+}
+
+/* 휴식 카드 */
+.rest-card {
+  text-align: center;
+  max-width: 480px;
+}
+.rest-card h2 {
+  margin: 12px 0 8px;
+}
+.rest-card p {
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}

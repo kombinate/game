@@ -1,0 +1,147 @@
+/* ==========================================================================
+   방글방글 한글 놀이터 - 캐릭터 모션 & 보상 CSS Keyframe 애니메이션
+   ========================================================================== */
+
+@keyframes tiltPhone {
+  0%, 100% { transform: rotate(0deg); }
+  40%, 60% { transform: rotate(-90deg); }
+}
+
+@keyframes floatCloud {
+  0% { transform: translateX(0px); }
+  100% { transform: translateX(36px); }
+}
+
+@keyframes pulseSoft {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+@keyframes popCelebrate {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 마스코트 아기곰 보리 상태별 애니메이션 */
+@keyframes mascotIdleBreath {
+  0%, 100% { transform: translateY(0px) scale(1, 1); }
+  50% { transform: translateY(-4px) scale(1.01, 0.99); }
+}
+
+@keyframes mascotHappyDance {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  25% { transform: translateY(-14px) rotate(-8deg) scale(1.05); }
+  50% { transform: translateY(-4px) rotate(0deg) scale(1.02); }
+  75% { transform: translateY(-14px) rotate(8deg) scale(1.05); }
+}
+
+@keyframes mascotWaveArm {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-38deg); }
+}
+
+@keyframes mascotEncourageNod {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  30% { transform: rotate(-5deg) translateY(3px); }
+  60% { transform: rotate(5deg) translateY(3px); }
+}
+
+@keyframes mascotBlink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.1); }
+}
+
+/* 마스코트 SVG 클래스 바인딩 */
+.mascot-svg .mascot-body-group {
+  transform-origin: center bottom;
+  animation: mascotIdleBreath 2.8s ease-in-out infinite;
+}
+
+.mascot-svg .mascot-eyes {
+  transform-origin: center 105px;
+  animation: mascotBlink 4.2s infinite;
+}
+
+.mascot-svg.state-dance .mascot-body-group {
+  animation: mascotHappyDance 0.65s ease-in-out infinite;
+}
+
+.mascot-svg.state-dance .mascot-arm-left {
+  transform-origin: 68px 145px;
+  animation: mascotWaveArm 0.4s ease-in-out infinite alternate;
+}
+
+.mascot-svg.state-dance .mascot-arm-right {
+  transform-origin: 132px 145px;
+  animation: mascotWaveArm 0.4s ease-in-out infinite alternate-reverse;
+}
+
+.mascot-svg.state-encourage .mascot-body-group {
+  animation: mascotEncourageNod 0.9s ease-in-out 2;
+}
+
+/* 스티커 춤추기 모션 */
+@keyframes stickerDance {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  25% { transform: translateY(-8px) rotate(-6deg) scale(1.06); }
+  75% { transform: translateY(-8px) rotate(6deg) scale(1.06); }
+}
+
+.sticker-dancing {
+  animation: stickerDance 0.55s ease-in-out 3;
+}
+
+/* 부드러운 격려 흔들림 (절대 부정적이지 않은 젤리 바운스) */
+@keyframes gentleWobble {
+  0%, 100% { transform: translateX(0) scale(1); }
+  25% { transform: translateX(-6px) scale(0.98); }
+  50% { transform: translateX(6px) scale(1.02); }
+  75% { transform: translateX(-4px) scale(0.99); }
+}
+
+.gentle-wobble {
+  animation: gentleWobble 0.45s ease;
+}
+
+/* 풍선 팡! 터지는 파티클 */
+@keyframes balloonPopOut {
+  0% { transform: scale(1); opacity: 1; }
+  40% { transform: scale(1.35); opacity: 0.9; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+.balloon-popping {
+  animation: balloonPopOut 0.28s ease-out forwards;
+  pointer-events: none;
+}
+
+/* 축하 꽃가루 (Confetti) */
+.confetti-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -24px;
+  width: 14px;
+  height: 20px;
+  border-radius: 4px;
+  opacity: 0.95;
+  animation: confettiFall linear forwards;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(820px) rotate(720deg);
+    opacity: 0.2;
+  }
+}

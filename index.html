@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="한글놀이터" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#FF8A65" />
+  <title>방글방글 한글 놀이터 - 만 6세 한글 공부 게임</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='28' fill='%23FFD54F'/%3E%3Ccircle cx='35' cy='35' r='16' fill='%23D78B48'/%3E%3Ccircle cx='85' cy='35' r='16' fill='%23D78B48'/%3E%3Ccircle cx='60' cy='66' r='36' fill='%23F4A460'/%3E%3Cellipse cx='60' cy='73' rx='14' ry='11' fill='%23FFF5E4'/%3E%3Ccircle cx='46' cy='58' r='5' fill='%233E2723'/%3E%3Ccircle cx='74' cy='58' r='5' fill='%233E2723'/%3E%3Cellipse cx='60' cy='69' rx='5' ry='4' fill='%233E2723'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="./css/animations.css" />
+</head>
+<body>
+  <!-- 세로 모드 안내 오버레이 -->
+  <div id="portrait-overlay" aria-live="polite">
+    <div class="rotate-card">
+      <div class="rotate-icon" aria-hidden="true">📱🔄</div>
+      <h2>화면을 가로로 돌려주세요! 🔄</h2>
+      <p>가로 화면에서 곰돌이 보리와 더 넓고 재미있게 놀 수 있어요!</p>
+      <button id="btn-dismiss-portrait" class="btn-secondary-pill" type="button">그냥 이대로 할래요</button>
+    </div>
+  </div>
+
+  <!-- 15분 쉬는 시간 오버레이 -->
+  <div id="rest-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-card rest-card">
+      <div class="rest-character" id="rest-character-slot"></div>
+      <h2>눈을 깜빡깜빡! 쉬는 시간이에요 🌙</h2>
+      <p>15분 동안 열심히 한글 놀이를 했어요!<br />먼 곳도 바라보고 물도 한 잔 마시고 올까요?</p>
+      <button id="btn-resume-from-rest" class="btn-primary-large" type="button">부모님 확인: 계속 놀기</button>
+    </div>
+  </div>
+
+  <!-- 메인 16:9 스테이지 래퍼 -->
+  <div id="app-wrapper">
+    <div id="stage-container">
+      <!-- 배경 장식 구름/언덕 -->
+      <div class="bg-decorations" aria-hidden="true">
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+        <div class="bg-hill hill-left"></div>
+        <div class="bg-hill hill-right"></div>
+      </div>
+
+      <!-- 상단 바 -->
+      <header id="top-bar">
+        <div class="top-left">
+          <button id="btn-home" class="icon-btn" type="button" aria-label="홈으로 가기" title="홈으로">
+            <svg viewBox="0 0 64 64" width="38" height="38">
+              <path d="M10 30 L32 11 L54 30 V53 C54 55 52 57 50 57 H38 V40 H26 V57 H14 C12 57 10 55 10 53 Z" fill="#FF7043" stroke="#FFF" stroke-width="4" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button id="btn-stage-badge" class="stage-pill" type="button" title="단계 바꾸기">
+            <span id="current-stage-label">1단계 · 기본 모음</span>
+          </button>
+        </div>
+
+        <!-- 진행도 별 5개 표시 (5문제 풀면 스티커 보상) -->
+        <div id="round-progress" aria-label="문제 진행도">
+          <div class="star-slot" data-index="0">★</div>
+          <div class="star-slot" data-index="1">★</div>
+          <div class="star-slot" data-index="2">★</div>
+          <div class="star-slot" data-index="3">★</div>
+          <div class="star-slot" data-index="4">★</div>
+          <div class="sticker-goal-icon" title="별 5개를 모으면 스티커 선물!">🎁</div>
+        </div>
+
+        <div class="top-right">
+          <button id="btn-repeat-tts" class="icon-btn tts-btn hidden" type="button" aria-label="소리 다시 듣기" title="다시 듣기">
+            <svg viewBox="0 0 64 64" width="36" height="36">
+              <path d="M12 24 H22 L36 12 V52 L22 40 H12 Z" fill="#29B6F6" stroke="#FFF" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M44 21 C49 26 49 38 44 43" stroke="#0288D1" stroke-width="5" stroke-linecap="round" fill="none"/>
+              <path d="M51 14 C59 23 59 41 51 50" stroke="#0288D1" stroke-width="5" stroke-linecap="round" fill="none"/>
+            </svg>
+          </button>
+
+          <button id="btn-stickerbook" class="stickerbook-btn" type="button" aria-label="내 스티커북 열기">
+            <span class="sb-icon">📒</span>
+            <span class="sb-text">스티커북</span>
+            <span id="sticker-count-badge" class="sb-count">0</span>
+          </button>
+
+          <!-- 부모님 설정 버튼 (3초 롱프레스) -->
+          <button id="btn-parent-lock" class="parent-lock-btn" type="button" aria-label="부모님 설정 (3초간 길게 누르기)">
+            <span class="lock-icon">⚙️</span>
+            <span class="lock-hint">부모님 3초꾹</span>
+            <svg class="hold-progress-ring" viewBox="0 0 44 44">
+              <circle class="ring-bg" cx="22" cy="22" r="18"></circle>
+              <circle id="parent-ring-fill" class="ring-fill" cx="22" cy="22" r="18"></circle>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- 메인 콘텐츠 영역 -->
+      <main id="main-area">
+        <!-- 좌측 캐릭터 & 말풍선 패널 -->
+        <aside id="mascot-panel">
+          <div id="speech-bubble" class="speech-bubble">
+            <p id="speech-text">안녕! 나랑 같이 재미있는 한글 놀이를 시작해 볼까?</p>
+          </div>
+          <div id="mascot-stage" role="button" tabindex="0" aria-label="아기 곰 보리 쓰다듬기">
+            <!-- character.js 에서 SVG 렌더링 -->
+          </div>
+          <div class="mascot-name-tag">🐻 아기곰 보리</div>
+        </aside>
+
+        <!-- 우측 인터랙티브 뷰포트 -->
+        <section id="view-panel">
+          <!-- 1. 홈 화면 (타이틀 및 미니게임 4종 선택) -->
+          <div id="screen-home" class="screen active">
+            <div class="home-header">
+              <h1 class="game-title">
+                <span class="title-pop c1">방</span><span class="title-pop c2">글</span><span class="title-pop c3">방</span><span class="title-pop c4">글</span>
+                <span class="title-main">한글 놀이터</span>
+              </h1>
+              <p class="home-subtitle">원하는 한글 놀이를 손가락으로 콕! 눌러보세요</p>
+            </div>
+
+            <!-- 단계 빠른 선택 탭 -->
+            <div id="home-stage-selector" class="stage-selector-bar" role="tablist" aria-label="학습 단계 선택">
+              <button class="stage-tab active" data-stage="1" type="button">1단계 <span>아·야·어</span></button>
+              <button class="stage-tab" data-stage="2" type="button">2단계 <span>ㄱ·ㄴ·ㄷ</span></button>
+              <button class="stage-tab" data-stage="3" type="button">3단계 <span>가·나·다</span></button>
+              <button class="stage-tab" data-stage="4" type="button">4단계 <span>쉬운 낱말</span></button>
+              <button class="stage-tab" data-stage="5" type="button">5단계 <span>받침 낱말</span></button>
+            </div>
+
+            <!-- 미니게임 4종 카드 그리드 -->
+            <div class="game-cards-grid">
+              <button class="game-mode-card card-balloon" data-game="balloon" type="button">
+                <div class="card-badge">놀이 1</div>
+                <div class="card-illust" aria-hidden="true">🎈</div>
+                <div class="card-title">글자 풍선 팡팡!</div>
+                <div class="card-desc">소리를 듣고 알맞은 글자 풍선을 터뜨려요</div>
+              </button>
+
+              <button class="game-mode-card card-match" data-game="match" type="button">
+                <div class="card-badge">놀이 2</div>
+                <div class="card-illust" aria-hidden="true">🃏</div>
+                <div class="card-title">낱말 짝꿍 찾기</div>
+                <div class="card-desc">귀여운 그림 카드와 한글 카드를 짝지어 봐요</div>
+              </button>
+
+              <button class="game-mode-card card-trace" data-game="trace" type="button">
+                <div class="card-badge">놀이 3</div>
+                <div class="card-illust" aria-hidden="true">✏️</div>
+                <div class="card-title">손가락 따라쓰기</div>
+                <div class="card-desc">반짝이는 길을 따라 손가락으로 슥슥 써봐요</div>
+              </button>
+
+              <button class="game-mode-card card-build" data-game="build" type="button">
+                <div class="card-badge">놀이 4</div>
+                <div class="card-illust" aria-hidden="true">🧩</div>
+                <div class="card-title">글자 블록 합체!</div>
+                <div class="card-desc">자음 블록과 모음 블록을 합쳐 글자를 만들어요</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. 미니게임 플레이 화면 -->
+          <div id="screen-game" class="screen">
+            <div id="game-mount" class="game-mount"></div>
+          </div>
+
+          <!-- 3. 내 스티커북 화면 -->
+          <div id="screen-stickerbook" class="screen">
+            <div class="stickerbook-header">
+              <h2>🌟 보리의 반짝반짝 스티커북</h2>
+              <p>스티커를 손가락으로 콕! 누르면 신나게 춤을 춰요!</p>
+            </div>
+            <div id="sticker-grid" class="sticker-grid"></div>
+          </div>
+        </section>
+      </main>
+
+      <!-- 5문제 완료 시 5~8초 축하 & 움직이는 스티커 보상 오버레이 -->
+      <div id="reward-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+        <div id="confetti-layer" class="confetti-layer" aria-hidden="true"></div>
+        <div class="reward-modal-card">
+          <div class="reward-ribbon">참 잘했어요! 별 5개 완성! 🎉</div>
+          <div id="reward-sticker-showcase" class="reward-sticker-showcase"></div>
+          <h3 id="reward-sticker-title" class="reward-sticker-title">새로운 친구 스티커 획득!</h3>
+          <p id="reward-sticker-desc" class="reward-sticker-desc">스티커북에 멋지게 붙였어요!</p>
+          <div class="reward-actions">
+            <button id="btn-reward-continue" class="btn-primary-large" type="button">계속 놀기 ▶</button>
+            <button id="btn-reward-stickerbook" class="btn-secondary-large" type="button">스티커북 보기 📒</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 부모님 설정 모달 -->
+      <div id="parent-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="parent-modal-title">
+        <div class="modal-card parent-card">
+          <div class="parent-modal-header">
+            <h2 id="parent-modal-title">👨‍👩‍👧 부모님 설정 메뉴</h2>
+            <button id="btn-close-parent" class="btn-close-round" type="button" aria-label="닫기">✕</button>
+          </div>
+
+          <div class="parent-settings-body">
+            <div class="setting-row">
+              <div class="setting-label">
+                <strong>시작 학습 단계 선택</strong>
+                <span>아이의 수준에 맞는 한글 단계를 선택해 주세요.</span>
+              </div>
+              <select id="select-parent-stage" class="parent-select">
+                <option value="1">1단계: 기본 모음 (ㅏ, ㅑ, ㅓ, ㅕ...)</option>
+                <option value="2">2단계: 기본 자음 (ㄱ, ㄴ, ㄷ, ㄹ...)</option>
+                <option value="3">3단계: 자음+모음 결합 (가, 나, 다...)</option>
+                <option value="4">4단계: 받침 없는 쉬운 낱말 (나비, 사자...)</option>
+                <option value="5">5단계: 쉬운 받침 낱말 (달, 곰, 별...)</option>
+              </select>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <strong>효과음 및 음성 크기</strong>
+                <span>배경 효과음과 음성 안내의 크기를 조절합니다.</span>
+              </div>
+              <div class="volume-control-wrap">
+                <input id="input-parent-volume" type="range" min="0" max="100" step="5" value="85" />
+                <span id="label-parent-volume">85%</span>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <strong>선생님 목소리 선택 (TTS)</strong>
+                <span>가장 자연스러운 상냥한 여선생님 목소리를 우선 선택합니다.</span>
+              </div>
+              <div class="volume-control-wrap">
+                <select id="select-parent-voice" class="parent-select">
+                  <option value="">자동 (상냥한 여선생님 추천)</option>
+                </select>
+                <button id="btn-test-voice" class="btn-small-outline" type="button">🔊 목소리 듣기</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <strong>음성 읽기 속도 (TTS)</strong>
+                <span>아이 눈높이에 맞춘 자연스러운 발음 속도 (기본 0.92x)</span>
+              </div>
+              <div class="volume-control-wrap">
+                <input id="input-parent-rate" type="range" min="0.75" max="1.1" step="0.05" value="0.92" />
+                <span id="label-parent-rate">0.92x</span>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <strong>15분 쉬는 시간 타이머</strong>
+                <span>아이의 눈 건강을 위해 15분 플레이 후 휴식 안내를 띄웁니다.</span>
+              </div>
+              <div class="timer-control-wrap">
+                <label class="toggle-switch">
+                  <input id="chk-rest-timer" type="checkbox" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+                <span id="rest-timer-remain" class="timer-remain-badge">남은 시간 15:00</span>
+                <button id="btn-reset-timer" class="btn-small-outline" type="button">타이머 리셋</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <strong>학습 기록 및 스티커북 초기화</strong>
+                <span>모은 스티커(<span id="parent-stat-stickers">0</span>장)와 해결한 문제(<span id="parent-stat-solved">0</span>개)를 초기화합니다.</span>
+              </div>
+              <button id="btn-reset-progress" class="btn-danger-outline" type="button">진행도 초기화</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 순수 바닐라 JS 스크립트 로드 (상대 경로 './') -->
+  <script src="./js/words.js"></script>
+  <script src="./js/audio.js"></script>
+  <script src="./js/character.js"></script>
+  <script src="./js/games/balloon.js"></script>
+  <script src="./js/games/match.js"></script>
+  <script src="./js/games/trace.js"></script>
+  <script src="./js/games/build.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
