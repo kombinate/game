@@ -1201,7 +1201,6 @@ button:focus-visible {
   height: 47%;
   position: relative;
   min-height: 0;
-  height: 100%;
   border-radius: 14px;
   border-radius: clamp(14px, 2.8dvh, 24px);
   background: #FFFFFF;
@@ -1373,12 +1372,10 @@ button:focus-visible {
 
 .trace-canvas-wrap {
   -webkit-flex: 1 1 0;
-  -webkit-flex: 1 1 0;
   flex: 1 1 0;
   width: 72%;
   margin-right: 8px;
   position: relative;
-  width: 100%;
   height: 100%;
   min-height: 0;
   background: #FFFDF9;

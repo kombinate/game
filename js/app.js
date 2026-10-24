@@ -26,7 +26,8 @@ window.HG = window.HG || {};
     unlockedStickers: ["stk_bear"], // 기본 환영 스티커 1장 지급
     restTimerEnabled: true,
     bgmEnabled: true,
-    bgmVolume: 55
+    bgmVolume: 100,
+    bgmVolumeCustom: false
   };
 
   var state = loadState();
@@ -47,6 +48,9 @@ window.HG = window.HG || {};
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return Object.assign({}, defaultState);
       var parsed = JSON.parse(raw);
+      if (!parsed.bgmVolumeCustom) {
+        parsed.bgmVolume = 100;
+      }
       return Object.assign({}, defaultState, parsed, { unlockedStickers: Array.isArray(parsed.unlockedStickers) ? parsed.unlockedStickers : ["stk_bear"] });
     } catch (e) {
       return Object.assign({}, defaultState);
@@ -70,7 +74,7 @@ window.HG = window.HG || {};
       HG.Audio.setPreferredVoice(state.preferredVoiceURI);
     }
     if (HG.Audio.setBgmVolume) {
-      var initBgmVol = typeof state.bgmVolume === "number" ? state.bgmVolume : 55;
+      var initBgmVol = typeof state.bgmVolume === "number" ? state.bgmVolume : 100;
       HG.Audio.setBgmVolume(initBgmVol / 100);
     }
     if (HG.Audio.setBgmEnabled) {
@@ -679,11 +683,12 @@ window.HG = window.HG || {};
     }
 
     if (inputBgmVol && labelBgmVol) {
-      var curBgmVol = typeof state.bgmVolume === "number" ? state.bgmVolume : 55;
+      var curBgmVol = typeof state.bgmVolume === "number" ? state.bgmVolume : 100;
       inputBgmVol.value = String(curBgmVol);
       labelBgmVol.textContent = (curBgmVol + "%");
       inputBgmVol.addEventListener("input", function () {
         state.bgmVolume = Number(inputBgmVol.value);
+        state.bgmVolumeCustom = true;
         labelBgmVol.textContent = (state.bgmVolume + "%");
         if (HG.Audio.setBgmVolume) {
           HG.Audio.setBgmVolume(state.bgmVolume / 100);

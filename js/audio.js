@@ -21,7 +21,7 @@ window.HG = window.HG || {};
 
   // 배경음악(BGM) 상태 변수
   var bgmEnabled = true;
-  var bgmVolume = 0.55; // 동요 배경음악 볼륨 (0.0 ~ 1.0, 기본 55%)
+  var bgmVolume = 1.0; // 동요 배경음악 볼륨 (0.0 ~ 1.0, 기본 100%)
   var bgmPlaying = false;
   var bgmStepTimer = null;
   var bgmDuckTimer = null;
