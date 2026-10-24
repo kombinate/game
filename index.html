@@ -97,6 +97,10 @@
             <span id="sticker-count-badge" class="sb-count">0</span>
           </button>
 
+          <button id="btn-bgm-toggle" class="icon-btn" type="button" aria-label="배경음악 켜기/끄기" title="동요 배경음악 켜기/끄기">
+            <span id="bgm-icon-label" style="font-size:22px;line-height:1;">🎵</span>
+          </button>
+
           <button id="btn-fullscreen" class="icon-btn" type="button" aria-label="전체화면 전환" title="전체화면">
             <svg viewBox="0 0 64 64" width="32" height="32">
               <defs>
@@ -249,6 +253,21 @@
               <div class="volume-control-wrap">
                 <input id="input-parent-volume" type="range" min="0" max="100" step="5" value="85" />
                 <span id="label-parent-volume">85%</span>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label">
+                <strong>잔잔한 동요 배경음악 (BGM)</strong>
+                <span>인기 동요 8곡 오르골 연주가 랜덤 재생됩니다.</span>
+              </div>
+              <div class="timer-control-wrap">
+                <label class="toggle-switch">
+                  <input id="chk-bgm-enabled" type="checkbox" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+                <span id="label-bgm-title" class="timer-remain-badge">🎵 곰 세 마리</span>
+                <button id="btn-next-bgm" class="btn-small-outline" type="button">🔀 다음 동요</button>
               </div>
             </div>
 

@@ -24,7 +24,8 @@ window.HG = window.HG || {};
     roundStars: 0,       // 0 ~ 5 (5개 채우면 스티커 보상)
     totalSolved: 0,
     unlockedStickers: ["stk_bear"], // 기본 환영 스티커 1장 지급
-    restTimerEnabled: true
+    restTimerEnabled: true,
+    bgmEnabled: true
   };
 
   var state = loadState();
@@ -61,11 +62,14 @@ window.HG = window.HG || {};
     preventMobileTouchGlitches();
     HG.Character.init();
 
-    // 오디오 볼륨/속도/선호 목소리 초기 반영
+    // 오디오 볼륨/속도/선호 목소리/배경음악 초기 반영
     HG.Audio.setVolume(state.volume / 100);
     HG.Audio.setSpeechRate(state.speechRate);
     if (state.preferredVoiceURI) {
       HG.Audio.setPreferredVoice(state.preferredVoiceURI);
+    }
+    if (HG.Audio.setBgmEnabled) {
+      HG.Audio.setBgmEnabled(state.bgmEnabled !== false);
     }
 
     bindTopBarEvents();
@@ -77,6 +81,7 @@ window.HG = window.HG || {};
     syncStageUI();
     syncStarProgressUI();
     syncStickerBadgeUI();
+    syncBgmUI();
     startRestTimer();
   }
 
@@ -157,8 +162,21 @@ window.HG = window.HG || {};
     var btnStageBadge = document.getElementById("btn-stage-badge");
     var btnRepeatTts = document.getElementById("btn-repeat-tts");
     var btnStickerbook = document.getElementById("btn-stickerbook");
+    var btnBgmToggle = document.getElementById("btn-bgm-toggle");
     var btnFullscreen = document.getElementById("btn-fullscreen");
     var btnParentLock = document.getElementById("btn-parent-lock");
+
+    if (btnBgmToggle) {
+      btnBgmToggle.addEventListener("click", function () {
+        HG.Audio.playTap();
+        state.bgmEnabled = !(state.bgmEnabled !== false);
+        if (HG.Audio.setBgmEnabled) {
+          HG.Audio.setBgmEnabled(state.bgmEnabled);
+        }
+        saveState();
+        syncBgmUI();
+      });
+    }
 
     if (btnFullscreen) {
       btnFullscreen.addEventListener("click", function () {
@@ -331,6 +349,22 @@ window.HG = window.HG || {};
     var badge = document.getElementById("sticker-count-badge");
     if (badge) {
       badge.textContent = String(state.unlockedStickers.length);
+    }
+  }
+
+  function syncBgmUI() {
+    var enabled = state.bgmEnabled !== false;
+    var iconLabel = document.getElementById("bgm-icon-label");
+    if (iconLabel) {
+      iconLabel.textContent = enabled ? "🎵" : "🔇";
+    }
+    var chkBgm = document.getElementById("chk-bgm-enabled");
+    if (chkBgm) {
+      chkBgm.checked = enabled;
+    }
+    var titleBadge = document.getElementById("label-bgm-title");
+    if (titleBadge && HG.Audio.getCurrentBgmTitle) {
+      titleBadge.textContent = enabled ? ("🎵 " + HG.Audio.getCurrentBgmTitle()) : "🔇 꺼짐";
     }
   }
 
@@ -600,9 +634,42 @@ window.HG = window.HG || {};
     var labelRate = document.getElementById("label-parent-rate");
     var selectVoice = document.getElementById("select-parent-voice");
     var btnTestVoice = document.getElementById("btn-test-voice");
+    var chkBgm = document.getElementById("chk-bgm-enabled");
+    var btnNextBgm = document.getElementById("btn-next-bgm");
     var chkTimer = document.getElementById("chk-rest-timer");
     var btnResetTimer = document.getElementById("btn-reset-timer");
     var btnResetProgress = document.getElementById("btn-reset-progress");
+
+    HG.onBgmTrackChanged = function () {
+      syncBgmUI();
+    };
+
+    if (chkBgm) {
+      chkBgm.checked = state.bgmEnabled !== false;
+      chkBgm.addEventListener("change", function () {
+        state.bgmEnabled = chkBgm.checked;
+        if (HG.Audio.setBgmEnabled) {
+          HG.Audio.setBgmEnabled(state.bgmEnabled);
+        }
+        saveState();
+        syncBgmUI();
+      });
+    }
+
+    if (btnNextBgm) {
+      btnNextBgm.addEventListener("click", function () {
+        HG.Audio.playTap();
+        if (!state.bgmEnabled) {
+          state.bgmEnabled = true;
+          if (HG.Audio.setBgmEnabled) HG.Audio.setBgmEnabled(true);
+          saveState();
+        }
+        if (HG.Audio.nextBgmTrack) {
+          HG.Audio.nextBgmTrack();
+        }
+        syncBgmUI();
+      });
+    }
 
     if (btnClose && modal) {
       btnClose.addEventListener("click", function () {
@@ -732,6 +799,7 @@ window.HG = window.HG || {};
     var restOverlay = document.getElementById("rest-overlay");
     if (restOverlay) {
       restOverlay.classList.remove("hidden");
+      if (HG.Audio.stopBgm) HG.Audio.stopBgm();
       HG.Audio.speak("눈을 깜빡깜빡! 쉬는 시간이에요. 물도 한 잔 마시고 올까요?");
     }
   }
@@ -745,6 +813,9 @@ window.HG = window.HG || {};
         restRemainingSec = REST_LIMIT_SECONDS;
         updateTimerBadgeUI();
         restOverlay.classList.add("hidden");
+        if (state.bgmEnabled !== false && HG.Audio.startBgm) {
+          HG.Audio.startBgm();
+        }
       });
     }
   }

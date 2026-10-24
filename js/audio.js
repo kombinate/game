@@ -19,6 +19,16 @@ window.HG = window.HG || {};
   var koreanVoice = null;
   var preferredVoiceURI = ""; // 사용자가 부모 설정에서 직접 지정한 음성 URI
 
+  // 배경음악(BGM) 상태 변수
+  var bgmEnabled = true;
+  var bgmPlaying = false;
+  var bgmStepTimer = null;
+  var bgmDuckTimer = null;
+  var isSpeaking = false;
+  var bgmPlaylist = [];
+  var bgmCurrentSong = null;
+  var bgmNoteIndex = 0;
+
   // 단일 자음/모음을 읽을 때 특수문자 없이 깨끗한 한국어 발음만 전달
   var PHONETIC_MAP = {
     "ㅏ": "아",
@@ -174,6 +184,9 @@ window.HG = window.HG || {};
       } catch (e) {}
     }
     isUnlocked = true;
+    if (bgmEnabled && !bgmPlaying) {
+      startBgm();
+    }
   }
 
   ["pointerdown", "touchstart", "click", "keydown"].forEach(function (evtName) {
@@ -479,6 +492,23 @@ window.HG = window.HG || {};
     ];
   }
 
+  function markSpeakingStart(durationEstimateMs) {
+    isSpeaking = true;
+    if (bgmDuckTimer) clearTimeout(bgmDuckTimer);
+    bgmDuckTimer = setTimeout(function () {
+      isSpeaking = false;
+      bgmDuckTimer = null;
+    }, durationEstimateMs || 3200);
+  }
+
+  function markSpeakingEnd() {
+    isSpeaking = false;
+    if (bgmDuckTimer) {
+      clearTimeout(bgmDuckTimer);
+      bgmDuckTimer = null;
+    }
+  }
+
   /**
    * 한글 음성 발음 (커스텀 mp3 폴백 + 감정 억양이 살아있는 여선생님 Web Speech API)
    */
@@ -490,12 +520,14 @@ window.HG = window.HG || {};
     }
 
     var spokenText = humanizeTeacherText(text);
+    markSpeakingStart(Math.max(1800, spokenText.length * 220));
 
     // 1순위: 커스텀 mp3 파일이 지정된 경우 우선 재생
     if (options.audioSrc) {
       var audio = new Audio(options.audioSrc);
       audio.volume = masterVolume;
       audio.onended = function () {
+        markSpeakingEnd();
         if (options.onEnd) options.onEnd();
       };
       audio.onerror = function () {
@@ -513,6 +545,7 @@ window.HG = window.HG || {};
   function speakWithWebSpeech(spokenText, options) {
     if (options === void 0) options = {};
     if (!("speechSynthesis" in window)) {
+      markSpeakingEnd();
       if (options.onEnd) options.onEnd();
       return;
     }
@@ -542,17 +575,378 @@ window.HG = window.HG || {};
         utter.pitch = options.pitch || seg.pitch;
         utter.volume = masterVolume;
 
-        if (idx === segments.length - 1 && options.onEnd) {
-          utter.onend = options.onEnd;
-          utter.onerror = options.onEnd;
+        if (idx === segments.length - 1) {
+          utter.onend = function () {
+            markSpeakingEnd();
+            if (options.onEnd) options.onEnd();
+          };
+          utter.onerror = function () {
+            markSpeakingEnd();
+            if (options.onEnd) options.onEnd();
+          };
         }
 
         window.speechSynthesis.speak(utter);
       });
     } catch (err) {
+      markSpeakingEnd();
       if (options.onEnd) options.onEnd();
     }
   }
+
+  /**
+   * ==========================================================================
+   * 7. 잔잔한 오르골/실로폰 동요 빅히트송 BGM 시스템 (8곡 랜덤 셔플 재생)
+   * ==========================================================================
+   */
+  var NOTE_FREQ = {
+    REST: 0,
+    G3: 196.00, A3: 220.00, B3: 246.94,
+    C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, FS4: 369.99, G4: 392.00, A4: 440.00, B4: 493.88,
+    C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, FS5: 739.99, G5: 783.99, A5: 880.00, B5: 987.77,
+    C6: 1046.50
+  };
+
+  // 인기 동요 빅히트송 8곡 악보 데이터 ([음이름, 박자(1 = 4분음표), 베이스음(선택)])
+  var BGM_SONGS = [
+    {
+      id: "three_bears",
+      title: "곰 세 마리",
+      beatMs: 310,
+      notes: [
+        // 곰 세 마리가 한 집에 있어
+        ["C5", 1, "C4"], ["C5", 0.5], ["C5", 0.5], ["C5", 1], ["C5", 1],
+        ["E5", 1, "G3"], ["G5", 0.5], ["G5", 0.5], ["E5", 1], ["C5", 1],
+        // 아빠 곰 엄마 곰 애기 곰
+        ["G5", 0.5, "G3"], ["G5", 0.5], ["E5", 1], ["G5", 0.5, "G3"], ["G5", 0.5], ["E5", 1],
+        ["C5", 1, "C4"], ["C5", 1], ["C5", 1.5], ["REST", 0.5],
+        // 아빠 곰은 뚱뚱해
+        ["G5", 1, "C4"], ["G5", 1], ["E5", 1], ["C5", 1],
+        ["G5", 1, "G3"], ["G5", 1], ["G5", 1.5], ["REST", 0.5],
+        // 엄마 곰은 날씬해
+        ["G5", 1, "C4"], ["G5", 1], ["E5", 1], ["C5", 1],
+        ["A5", 1, "F4"], ["A5", 1], ["A5", 1.5], ["REST", 0.5],
+        // 애기 곰은 너무 귀여워
+        ["G5", 1, "C4"], ["G5", 1], ["E5", 1], ["C5", 1],
+        ["D5", 0.5, "G3"], ["D5", 0.5], ["D5", 0.5], ["E5", 0.5], ["F5", 1.5], ["REST", 0.5],
+        // 으쓱으쓱 잘한다
+        ["E5", 1, "C4"], ["D5", 1], ["C5", 1, "G3"], ["D5", 1],
+        ["G5", 1, "G3"], ["G5", 1], ["C5", 2, "C4"], ["REST", 1]
+      ]
+    },
+    {
+      id: "little_star",
+      title: "작은 별",
+      beatMs: 340,
+      notes: [
+        // 반짝반짝 작은 별 아름답게 비치네
+        ["C5", 1, "C4"], ["C5", 1], ["G5", 1, "E4"], ["G5", 1],
+        ["A5", 1, "F4"], ["A5", 1], ["G5", 1.8, "C4"], ["REST", 0.2],
+        ["F5", 1, "F4"], ["F5", 1], ["E5", 1, "C4"], ["E5", 1],
+        ["D5", 1, "G3"], ["D5", 1], ["C5", 1.8, "C4"], ["REST", 0.2],
+        // 동쪽 하늘에서도 서쪽 하늘에서도
+        ["G5", 1, "C4"], ["G5", 1], ["F5", 1, "F4"], ["F5", 1],
+        ["E5", 1, "C4"], ["E5", 1], ["D5", 1.8, "G3"], ["REST", 0.2],
+        ["G5", 1, "C4"], ["G5", 1], ["F5", 1, "F4"], ["F5", 1],
+        ["E5", 1, "C4"], ["E5", 1], ["D5", 1.8, "G3"], ["REST", 0.2],
+        // 반짝반짝 작은 별 아름답게 비치네
+        ["C5", 1, "C4"], ["C5", 1], ["G5", 1, "E4"], ["G5", 1],
+        ["A5", 1, "F4"], ["A5", 1], ["G5", 1.8, "C4"], ["REST", 0.2],
+        ["F5", 1, "F4"], ["F5", 1], ["E5", 1, "C4"], ["E5", 1],
+        ["D5", 1, "G3"], ["D5", 1], ["C5", 2, "C4"], ["REST", 1]
+      ]
+    },
+    {
+      id: "butterfly",
+      title: "나비야",
+      beatMs: 320,
+      notes: [
+        // 나비야 나비야 이리 날아오너라
+        ["G5", 1, "C4"], ["E5", 1], ["E5", 1.8], ["REST", 0.2],
+        ["F5", 1, "G3"], ["D5", 1], ["D5", 1.8], ["REST", 0.2],
+        ["C5", 1, "C4"], ["D5", 1], ["E5", 1, "E4"], ["F5", 1],
+        ["G5", 1, "G3"], ["G5", 1], ["G5", 1.8], ["REST", 0.2],
+        // 노란 나비 흰 나비 춤을 추며 오너라
+        ["G5", 1, "C4"], ["E5", 1], ["E5", 1], ["E5", 1],
+        ["F5", 1, "G3"], ["D5", 1], ["D5", 1.8], ["REST", 0.2],
+        ["C5", 1, "C4"], ["E5", 1], ["G5", 1, "G3"], ["G5", 1],
+        ["E5", 1, "C4"], ["E5", 1], ["E5", 1.8], ["REST", 0.2],
+        // 봄바람에 꽃잎도 방긋방긋 웃으며
+        ["D5", 1, "G3"], ["D5", 1], ["D5", 1], ["D5", 1],
+        ["D5", 1, "G3"], ["E5", 1], ["F5", 1.8], ["REST", 0.2],
+        ["E5", 1, "C4"], ["E5", 1], ["E5", 1], ["E5", 1],
+        ["E5", 1, "C4"], ["F5", 1], ["G5", 1.8], ["REST", 0.2],
+        // 참새도 짹짹짹 노래하며 춤춘다
+        ["G5", 1, "C4"], ["E5", 1], ["E5", 1.8], ["REST", 0.2],
+        ["F5", 1, "G3"], ["D5", 1], ["D5", 1.8], ["REST", 0.2],
+        ["C5", 1, "C4"], ["E5", 1], ["G5", 1, "G3"], ["G5", 1],
+        ["C5", 2, "C4"], ["REST", 1]
+      ]
+    },
+    {
+      id: "baby_shark",
+      title: "아기 상어",
+      beatMs: 280,
+      notes: [
+        // 아기 상어 뚜루루 뚜루
+        ["D5", 1, "G3"], ["E5", 1, "D4"],
+        ["G5", 0.5, "G3"], ["G5", 0.5], ["G5", 0.5], ["G5", 0.25], ["G5", 0.5], ["G5", 0.25], ["G5", 0.5], ["REST", 0.5],
+        // 귀여운 뚜루루 뚜루
+        ["D5", 0.5, "C4"], ["E5", 0.5],
+        ["G5", 0.5, "C4"], ["G5", 0.5], ["G5", 0.5], ["G5", 0.25], ["G5", 0.5], ["G5", 0.25], ["G5", 0.5], ["REST", 0.5],
+        // 바닷속 뚜루루 뚜루 아기 상어!
+        ["D5", 0.5, "E4"], ["E5", 0.5],
+        ["G5", 0.5, "E4"], ["G5", 0.5], ["G5", 0.5], ["G5", 0.25], ["G5", 0.5], ["G5", 0.25], ["G5", 0.5], ["REST", 0.5],
+        ["G5", 0.5, "D4"], ["G5", 0.5], ["FS5", 2, "G3"], ["REST", 1]
+      ]
+    },
+    {
+      id: "airplane",
+      title: "비행기",
+      beatMs: 320,
+      notes: [
+        // 떴다 떴다 비행기 날아라 날아라
+        ["E5", 1.5, "C4"], ["D5", 0.5], ["C5", 1], ["D5", 1],
+        ["E5", 1, "C4"], ["E5", 1], ["E5", 1.8], ["REST", 0.2],
+        ["D5", 1, "G3"], ["D5", 1], ["D5", 1.8], ["REST", 0.2],
+        ["E5", 1, "C4"], ["G5", 1], ["G5", 1.8], ["REST", 0.2],
+        // 높이 높이 날아라 우리 비행기
+        ["E5", 1.5, "C4"], ["D5", 0.5], ["C5", 1], ["D5", 1],
+        ["E5", 1, "C4"], ["E5", 1], ["E5", 1.8], ["REST", 0.2],
+        ["D5", 1, "G3"], ["D5", 1], ["E5", 1], ["D5", 1],
+        ["C5", 2.2, "C4"], ["REST", 1]
+      ]
+    },
+    {
+      id: "mountain_rabbit",
+      title: "산토끼",
+      beatMs: 330,
+      notes: [
+        // 산토끼 토끼야 어디를 가느냐
+        ["G4", 1, "C4"], ["C5", 0.5], ["C5", 0.5], ["E5", 1, "C4"], ["D5", 1], ["C5", 1.8], ["REST", 0.2],
+        ["D5", 1, "G3"], ["E5", 0.5], ["D5", 0.5], ["C5", 1, "C4"], ["E5", 1], ["G5", 1.8, "G3"], ["REST", 0.2],
+        // 깡충깡충 뛰면서 어디를 가느냐
+        ["A5", 0.75, "F4"], ["E5", 0.25], ["G5", 1, "C4"], ["E5", 0.75], ["D5", 0.25], ["C5", 1], ["D5", 1.8, "G3"], ["REST", 0.2],
+        ["E5", 0.75, "C4"], ["G5", 0.25], ["D5", 1, "G3"], ["E5", 1], ["C5", 2.2, "C4"], ["REST", 1]
+      ]
+    },
+    {
+      id: "same_same",
+      title: "똑같아요",
+      beatMs: 320,
+      notes: [
+        // 송아지 송아지 얼룩 송아지
+        ["C5", 1, "C4"], ["E5", 1], ["G5", 1], ["C5", 1, "C4"], ["E5", 1], ["G5", 1],
+        ["A5", 1, "F4"], ["A5", 1], ["A5", 1], ["G5", 2.2, "C4"], ["REST", 0.8],
+        // 엄마 소도 얼룩소 엄마 닮았네
+        ["F5", 1, "F4"], ["F5", 1], ["F5", 1], ["E5", 1, "C4"], ["E5", 1], ["E5", 1],
+        ["D5", 1, "G3"], ["D5", 1], ["G4", 1], ["C5", 2.2, "C4"], ["REST", 1]
+      ]
+    },
+    {
+      id: "ten_friends",
+      title: "열 꼬마 친구들",
+      beatMs: 280,
+      notes: [
+        // 하나 둘 셋 꼬마 넷 다섯 여섯 꼬마
+        ["C5", 1, "C4"], ["C5", 0.5], ["C5", 0.5], ["C5", 1], ["C5", 0.5], ["E5", 0.5],
+        ["G5", 0.5, "C4"], ["E5", 0.5], ["C5", 1], ["C5", 1],
+        // 일곱 여덟 아홉 꼬마 열 꼬마 친구들
+        ["D5", 1, "G3"], ["D5", 0.5], ["D5", 0.5], ["D5", 1], ["D5", 0.5], ["B4", 0.5],
+        ["G4", 1.5, "G3"], ["REST", 0.5],
+        ["C5", 1, "C4"], ["C5", 0.5], ["C5", 0.5], ["C5", 1], ["C5", 0.5], ["E5", 0.5],
+        ["G5", 0.5, "C4"], ["E5", 0.5], ["C5", 1, "F4"], ["A5", 1],
+        ["G5", 1, "G3"], ["E5", 0.5], ["F5", 0.5], ["D5", 1, "G3"], ["B4", 1],
+        ["C5", 2.2, "C4"], ["REST", 1]
+      ]
+    }
+  ];
+
+  function refillAndShuffleBgmPlaylist() {
+    var pool = BGM_SONGS.slice();
+    for (var i = pool.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = pool[i];
+      pool[i] = pool[j];
+      pool[j] = tmp;
+    }
+    // 직전 곡과 첫 곡이 겹치지 않도록 방지
+    if (bgmCurrentSong && pool.length > 1 && pool[0].id === bgmCurrentSong.id) {
+      var first = pool.shift();
+      pool.push(first);
+    }
+    bgmPlaylist = pool;
+  }
+
+  function pickNextRandomSong() {
+    if (!bgmPlaylist.length) {
+      refillAndShuffleBgmPlaylist();
+    }
+    bgmCurrentSong = bgmPlaylist.shift();
+    bgmNoteIndex = 0;
+    if (typeof HG.onBgmTrackChanged === "function" && bgmCurrentSong) {
+      HG.onBgmTrackChanged(bgmCurrentSong.title);
+    }
+  }
+
+  /**
+   * 부드럽고 따뜻한 오르골/첼레스타 1음 합성
+   */
+  function playMusicBoxNote(freq, durSec, bassFreq) {
+    if (!bgmEnabled || masterVolume <= 0 || document.hidden) return;
+    var ctx = getContext();
+    if (!ctx) return;
+
+    var now = ctx.currentTime;
+    // 선생님 음성 안내(TTS) 중에는 배경음악 볼륨을 자동으로 낮춤 (Auto-Ducking)
+    var duckFactor = isSpeaking ? 0.25 : 1.0;
+    var noteVol = 0.058 * masterVolume * duckFactor;
+
+    if (freq > 0) {
+      var oscMain = ctx.createOscillator();
+      var oscOver = ctx.createOscillator();
+      var noteGain = ctx.createGain();
+      var overGain = ctx.createGain();
+
+      oscMain.type = "sine";
+      oscMain.frequency.setValueAtTime(freq, now);
+
+      oscOver.type = "triangle";
+      oscOver.frequency.setValueAtTime(freq * 2, now);
+      overGain.gain.setValueAtTime(0.12, now);
+
+      var releaseDur = Math.max(durSec * 1.15, 0.28);
+      noteGain.gain.setValueAtTime(0.0005, now);
+      noteGain.gain.linearRampToValueAtTime(noteVol, now + 0.02);
+      noteGain.gain.exponentialRampToValueAtTime(0.0005, now + releaseDur);
+
+      oscMain.connect(noteGain);
+      oscOver.connect(overGain);
+      overGain.connect(noteGain);
+      noteGain.connect(ctx.destination);
+
+      oscMain.start(now);
+      oscOver.start(now);
+      oscMain.stop(now + releaseDur + 0.03);
+      oscOver.stop(now + releaseDur + 0.03);
+    }
+
+    // 마디 첫 박자에 따뜻한 저음 루트 음 추가
+    if (bassFreq && bassFreq > 0) {
+      var bassOsc = ctx.createOscillator();
+      var bassGain = ctx.createGain();
+      var bassDur = Math.max(durSec * 1.6, 0.55);
+
+      bassOsc.type = "sine";
+      bassOsc.frequency.setValueAtTime(bassFreq, now);
+
+      bassGain.gain.setValueAtTime(0.0005, now);
+      bassGain.gain.linearRampToValueAtTime(noteVol * 0.48, now + 0.03);
+      bassGain.gain.exponentialRampToValueAtTime(0.0005, now + bassDur);
+
+      bassOsc.connect(bassGain);
+      bassGain.connect(ctx.destination);
+
+      bassOsc.start(now);
+      bassOsc.stop(now + bassDur + 0.03);
+    }
+  }
+
+  function stepBgmLoop() {
+    if (!bgmEnabled || !bgmPlaying) return;
+    if (document.hidden) {
+      bgmStepTimer = setTimeout(stepBgmLoop, 600);
+      return;
+    }
+
+    if (!bgmCurrentSong) {
+      pickNextRandomSong();
+    }
+
+    var notes = bgmCurrentSong.notes;
+    if (bgmNoteIndex >= notes.length) {
+      // 한 곡이 끝나면 잠시 숨을 고른 뒤 다음 랜덤 동요 재생
+      pickNextRandomSong();
+      bgmStepTimer = setTimeout(stepBgmLoop, 700);
+      return;
+    }
+
+    var item = notes[bgmNoteIndex];
+    bgmNoteIndex += 1;
+
+    var noteName = item[0];
+    var beats = item[1] || 1;
+    var bassName = item[2] || null;
+
+    var freq = NOTE_FREQ[noteName] || 0;
+    var bassFreq = bassName ? (NOTE_FREQ[bassName] || 0) : 0;
+    var durMs = Math.round(beats * bgmCurrentSong.beatMs);
+
+    playMusicBoxNote(freq, durMs / 1000, bassFreq);
+
+    bgmStepTimer = setTimeout(stepBgmLoop, durMs);
+  }
+
+  function startBgm() {
+    if (!bgmEnabled) return;
+    if (!isUnlocked) return;
+    if (bgmPlaying) return;
+    bgmPlaying = true;
+    if (!bgmCurrentSong) {
+      pickNextRandomSong();
+    }
+    if (bgmStepTimer) clearTimeout(bgmStepTimer);
+    bgmStepTimer = setTimeout(stepBgmLoop, 180);
+  }
+
+  function stopBgm() {
+    bgmPlaying = false;
+    if (bgmStepTimer) {
+      clearTimeout(bgmStepTimer);
+      bgmStepTimer = null;
+    }
+  }
+
+  function setBgmEnabled(enabled) {
+    bgmEnabled = Boolean(enabled);
+    if (bgmEnabled) {
+      startBgm();
+    } else {
+      stopBgm();
+    }
+  }
+
+  function isBgmEnabled() {
+    return bgmEnabled;
+  }
+
+  function nextBgmTrack() {
+    pickNextRandomSong();
+    if (bgmEnabled && isUnlocked) {
+      stopBgm();
+      startBgm();
+    }
+    return bgmCurrentSong ? bgmCurrentSong.title : "";
+  }
+
+  function getCurrentBgmTitle() {
+    if (!bgmCurrentSong) {
+      pickNextRandomSong();
+    }
+    return bgmCurrentSong ? bgmCurrentSong.title : "곰 세 마리";
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      if (bgmStepTimer) {
+        clearTimeout(bgmStepTimer);
+        bgmStepTimer = null;
+      }
+      bgmPlaying = false;
+    } else if (bgmEnabled && isUnlocked) {
+      startBgm();
+    }
+  });
 
   function setVolume(val0to1) {
     masterVolume = Math.max(0, Math.min(1, Number(val0to1)));
@@ -594,6 +988,12 @@ window.HG = window.HG || {};
     getSpeechRate: getSpeechRate,
     getKoreanVoices: getKoreanVoices,
     setPreferredVoice: setPreferredVoice,
-    getPreferredVoice: getPreferredVoice
+    getPreferredVoice: getPreferredVoice,
+    startBgm: startBgm,
+    stopBgm: stopBgm,
+    setBgmEnabled: setBgmEnabled,
+    isBgmEnabled: isBgmEnabled,
+    nextBgmTrack: nextBgmTrack,
+    getCurrentBgmTitle: getCurrentBgmTitle
   };
 })(window.HG);
