@@ -7,6 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="한글놀이터" />
   <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="color-scheme" content="only light" />
+  <meta name="supported-color-schemes" content="light" />
   <meta name="theme-color" content="#FF8A65" />
   <title>방글방글 한글 놀이터 - 만 6세 한글 공부 게임</title>
   <link rel="manifest" href="./manifest.json" />
@@ -52,7 +54,17 @@
         <div class="top-left">
           <button id="btn-home" class="icon-btn" type="button" aria-label="홈으로 가기" title="홈으로">
             <svg viewBox="0 0 64 64" width="38" height="38">
-              <path d="M10 30 L32 11 L54 30 V53 C54 55 52 57 50 57 H38 V40 H26 V57 H14 C12 57 10 55 10 53 Z" fill="#FF7043" stroke="#FFF" stroke-width="4" stroke-linejoin="round"/>
+              <defs>
+                <linearGradient id="homeFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#FF8A65"/>
+                  <stop offset="100%" stop-color="#FF7043"/>
+                </linearGradient>
+                <linearGradient id="homeStroke" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#FFFFFF"/>
+                  <stop offset="100%" stop-color="#FFF8E1"/>
+                </linearGradient>
+              </defs>
+              <path d="M10 30 L32 11 L54 30 V53 C54 55 52 57 50 57 H38 V40 H26 V57 H14 C12 57 10 55 10 53 Z" fill="url(#homeFill)" stroke="url(#homeStroke)" stroke-width="4" stroke-linejoin="round"/>
             </svg>
           </button>
           <button id="btn-stage-badge" class="stage-pill" type="button" title="단계 바꾸기">
@@ -83,6 +95,18 @@
             <span class="sb-icon">📒</span>
             <span class="sb-text">스티커북</span>
             <span id="sticker-count-badge" class="sb-count">0</span>
+          </button>
+
+          <button id="btn-fullscreen" class="icon-btn" type="button" aria-label="전체화면 전환" title="전체화면">
+            <svg viewBox="0 0 64 64" width="32" height="32">
+              <defs>
+                <linearGradient id="fsStroke" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#FF7043"/>
+                  <stop offset="100%" stop-color="#E64A19"/>
+                </linearGradient>
+              </defs>
+              <path d="M12 26 V12 H26 M38 12 H52 V26 M52 38 V52 H38 M26 52 H12 V38" stroke="url(#fsStroke)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
           </button>
 
           <!-- 부모님 설정 버튼 (3초 롱프레스) -->

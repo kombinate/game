@@ -381,8 +381,44 @@ window.HG = window.HG || {};
     return String.fromCharCode(code);
   }
 
+  let svgUidCounter = 0;
+
+  /**
+   * 모바일 브라우저(삼성 인터넷 등) 강제 다크모드가 인라인 SVG의 밝은색/어두운색 fill·stroke를
+   * 반전시켜 눈·코·입이나 흰색 그림이 깨지는 현상을 원천 방지하기 위해
+   * 모든 hex 색상을 linearGradient PaintServer 참조로 변환합니다.
+   */
+  function protectSvgColorsFromDarkFilter(rawSvg) {
+    svgUidCounter = (svgUidCounter + 1) % 100000;
+    const prefix = `hg_p_${svgUidCounter}_`;
+    const colorMap = new Map();
+    let idx = 0;
+
+    const replaced = rawSvg.replace(
+      /\b(fill|stroke)="(#[0-9A-Fa-f]{3,6})"/g,
+      (_, attr, hex) => {
+        const norm = hex.toUpperCase();
+        if (!colorMap.has(norm)) {
+          idx += 1;
+          colorMap.set(norm, `${prefix}${idx}`);
+        }
+        return `${attr}="url(#${colorMap.get(norm)})"`;
+      }
+    );
+
+    if (colorMap.size === 0) return rawSvg;
+
+    let defsInner = "";
+    colorMap.forEach((gradId, hex) => {
+      defsInner += `<linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${hex}"/><stop offset="100%" stop-color="${hex}"/></linearGradient>`;
+    });
+
+    return replaced.replace(/<svg\b([^>]*)>/, `<svg$1><defs>${defsInner}</defs>`);
+  }
+
   function getIllustSvg(key) {
-    return SVG_ILLUSTS[key] || SVG_ILLUSTS.star;
+    const raw = SVG_ILLUSTS[key] || SVG_ILLUSTS.star;
+    return protectSvgColorsFromDarkFilter(raw);
   }
 
   function getStageItems(stageNum) {

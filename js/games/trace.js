@@ -382,8 +382,8 @@ window.HG.Games = window.HG.Games || {};
     if (!wrap) return;
 
     const rect = wrap.getBoundingClientRect();
-    const w = Math.max(300, Math.floor(rect.width));
-    const h = Math.max(210, Math.floor(rect.height));
+    const w = Math.max(180, Math.floor(rect.width));
+    const h = Math.max(120, Math.floor(rect.height));
 
     canvas.width = w;
     canvas.height = h;

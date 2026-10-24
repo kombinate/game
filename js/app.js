@@ -110,8 +110,32 @@ window.HG = window.HG || {};
     if (dismissPortraitBtn) {
       dismissPortraitBtn.addEventListener("click", () => {
         document.body.classList.add("force-portrait");
+        syncViewportMetrics();
       });
     }
+
+    syncViewportMetrics();
+    window.addEventListener("resize", syncViewportMetrics);
+    window.addEventListener("orientationchange", () => {
+      setTimeout(syncViewportMetrics, 120);
+      setTimeout(syncViewportMetrics, 350);
+    });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", syncViewportMetrics);
+      window.visualViewport.addEventListener("scroll", syncViewportMetrics);
+    }
+  }
+
+  /**
+   * 모바일 브라우저 주소창/네비게이션바를 제외한 실제 가시 영역(visualViewport) 크기를
+   * CSS 변수(--app-width, --app-height)에 실시간 동기화하여 화면 잘림 방지
+   */
+  function syncViewportMetrics() {
+    const vv = window.visualViewport;
+    const w = Math.round(vv ? vv.width : window.innerWidth);
+    const h = Math.round(vv ? vv.height : window.innerHeight);
+    document.documentElement.style.setProperty("--app-width", `${w}px`);
+    document.documentElement.style.setProperty("--app-height", `${h}px`);
   }
 
   /**
@@ -122,7 +146,36 @@ window.HG = window.HG || {};
     const btnStageBadge = document.getElementById("btn-stage-badge");
     const btnRepeatTts = document.getElementById("btn-repeat-tts");
     const btnStickerbook = document.getElementById("btn-stickerbook");
+    const btnFullscreen = document.getElementById("btn-fullscreen");
     const btnParentLock = document.getElementById("btn-parent-lock");
+
+    if (btnFullscreen) {
+      btnFullscreen.addEventListener("click", () => {
+        HG.Audio.playTap();
+        const docEl = document.documentElement;
+        const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+        if (!isFs) {
+          const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
+          if (req) {
+            Promise.resolve(req.call(docEl))
+              .then(() => {
+                if (screen.orientation && screen.orientation.lock) {
+                  screen.orientation.lock("landscape").catch(() => {});
+                }
+                setTimeout(syncViewportMetrics, 150);
+              })
+              .catch(() => {});
+          }
+        } else {
+          const exit = document.exitFullscreen || document.webkitExitFullscreen;
+          if (exit) {
+            Promise.resolve(exit.call(document))
+              .then(() => setTimeout(syncViewportMetrics, 150))
+              .catch(() => {});
+          }
+        }
+      });
+    }
 
     if (btnHome) {
       btnHome.addEventListener("click", () => {
