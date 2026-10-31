@@ -475,33 +475,77 @@ window.HG = window.HG || {};
     ]
   };
 
-  // 스티커북 보상 카탈로그 (25종)
+  // 스티커북 보상 카탈로그 (단계별 12종 × 5단계 = 총 60종)
   var STICKER_CATALOG = [
-    { id: "stk_bear", name: "춤추는 보리", desc: "으쌰으쌰 신나게 춤추는 아기곰 보리!", icon: "bear" },
-    { id: "stk_rabbit", name: "깡충 분홍토끼", desc: "귀가 쫑긋! 당근을 좋아하는 토끼 친구", icon: "rabbit" },
-    { id: "stk_lion", name: "멋쟁이 사자왕", desc: "황금빛 갈기가 멋진 용감한 사자!", icon: "lion" },
-    { id: "stk_butterfly", name: "봄바람 나비", desc: "꽃밭을 훨훨 날아다니는 분홍 나비", icon: "butterfly" },
-    { id: "stk_train", name: "칙칙폭폭 기차", desc: "한글 나라로 신나게 달리는 빨간 기차", icon: "train" },
-    { id: "stk_star", name: "반짝이 아기별", desc: "밤하늘에서 윙크하는 노란 아기별", icon: "star" },
-    { id: "stk_hippo", name: "하품쟁이 하마", desc: "입을 크게 벌리는 귀염둥이 하마", icon: "hippo" },
-    { id: "stk_duck", name: "꽥꽥 노란오리", desc: "연못 위를 둥실둥실 헤엄치는 오리", icon: "duck" },
-    { id: "stk_apple", name: "발그레 사과", desc: "햇살을 먹고 빨갛게 익은 달콤 사과", icon: "apple" },
-    { id: "stk_watermelon", name: "시원한 수박", desc: "여름날 제일 맛있는 빨간 수박 조각", icon: "watermelon" },
-    { id: "stk_banana", name: "웃음꽃 바나나", desc: "달콤하고 부드러운 노란 바나나", icon: "banana" },
-    { id: "stk_grape", name: "탱글탱글 포도", desc: "알알이 모여 있는 보라색 포도송이", icon: "grape" },
-    { id: "stk_snow", name: "방긋 눈사람", desc: "빨간 목도리를 두른 겨울 눈사람", icon: "snow" },
-    { id: "stk_car", name: "붕붕 파란차", desc: "어디든 쌩쌩 달리는 귀여운 자동차", icon: "car" },
-    { id: "stk_moon", name: "새근새근 달님", desc: "예쁜 꿈을 선물해 주는 초승달", icon: "moon" },
-    { id: "stk_tiger", name: "용감한 호랑이", desc: "어흥! 줄무늬가 멋진 아기 호랑이", icon: "tiger" },
-    { id: "stk_penguin", name: "뒤뚱뒤뚱 펭귄", desc: "얼음 위를 신나게 미끄러지는 펭귄", icon: "penguin" },
-    { id: "stk_dinosaur", name: "쿵쾅 아기공룡", desc: "초록빛 몸집이 귀여운 아기 공룡", icon: "dinosaur" },
-    { id: "stk_giraffe", name: "키다리 기린", desc: "구름까지 닿을 듯 목이 긴 기린 친구", icon: "giraffe" },
-    { id: "stk_cat", name: "야옹 아기고양이", desc: "보들보들 귀여운 노란 고양이", icon: "cat" },
-    { id: "stk_dog", name: "멍멍 강아지", desc: "꼬리를 살랑살랑 흔드는 강아지", icon: "dog" },
-    { id: "stk_whale", name: "푸른 바다 고래", desc: "분수를 뿜으며 헤엄치는 파란 고래", icon: "whale" },
-    { id: "stk_rainbow", name: "일곱빛깔 무지개", desc: "하늘에 활짝 걸린 희망찬 무지개", icon: "rainbow" },
-    { id: "stk_robot", name: "삐리삐리 로봇", desc: "반짝이는 눈을 가진 장난감 로봇", icon: "robot" },
-    { id: "stk_strawberry", name: "새콤달콤 딸기", desc: "향이 솔솔 나는 빨간 딸기", icon: "strawberry" }
+    // 1단계 · 모음 놀이터 (12종)
+    { id: "stk_bear", stage: 1, category: "animal", name: "춤추는 보리", desc: "으쌰으쌰 신나게 춤추는 아기곰 보리!", icon: "bear" },
+    { id: "stk_child", stage: 1, category: "animal", name: "방긋 웃는 아이", desc: "해맑게 까르르 웃는 귀여운 아이 친구", icon: "child" },
+    { id: "stk_baseball", stage: 1, category: "toy", name: "홈런 야구공", desc: "하늘 높이 쌩~ 날아가는 하얀 야구공", icon: "baseball" },
+    { id: "stk_fishbowl", stage: 1, category: "animal", name: "보글보글 어항", desc: "예쁜 금붕어가 헤엄치는 투명한 어항", icon: "fishbowl" },
+    { id: "stk_fox", stage: 1, category: "animal", name: "복슬복슬 여우", desc: "주황색 꼬리가 멋스러운 똑똑한 여우", icon: "fox" },
+    { id: "stk_cucumber", stage: 1, category: "food", name: "아삭아삭 오이", desc: "싱그럽고 시원한 초록빛 오이", icon: "cucumber" },
+    { id: "stk_cooking", stage: 1, category: "food", name: "지글지글 요리", desc: "프라이팬 위에서 맛있는 냄새가 솔솔!", icon: "cooking" },
+    { id: "stk_milk", stage: 1, category: "food", name: "튼튼 하얀 우유", desc: "꿀꺽꿀꺽 마시면 키가 쑥쑥 크는 우유", icon: "milk" },
+    { id: "stk_stroller", stage: 1, category: "vehicle", name: "아기 유모차", desc: "보들보들 아기가 타고 산책하는 유모차", icon: "stroller" },
+    { id: "stk_tooth", stage: 1, category: "toy", name: "반짝 하얀 이빨", desc: "치카치카 양치질을 잘해서 빛나는 이빨", icon: "tooth" },
+    { id: "stk_waffle", stage: 1, category: "food", name: "꿀맛 바삭 와플", desc: "달콤한 버터가 사르르 녹는 노란 와플", icon: "waffle" },
+    { id: "stk_alien", stage: 1, category: "animal", name: "뿅뿅 우주 외계인", desc: "별나라에서 놀러 온 귀여운 외계인 친구", icon: "alien" },
+
+    // 2단계 · 자음 놀이터 (12종)
+    { id: "stk_bag", stage: 2, category: "toy", name: "소풍 가는 가방", desc: "맛있는 간식을 가득 넣은 노란 가방", icon: "bag" },
+    { id: "stk_butterfly", stage: 2, category: "animal", name: "봄바람 나비", desc: "꽃밭을 훨훨 날아다니는 분홍 나비", icon: "butterfly" },
+    { id: "stk_acorn", stage: 2, category: "nature", name: "데구르르 도토리", desc: "다람쥐가 가장 좋아하는 반질반질 도토리", icon: "acorn" },
+    { id: "stk_robot", stage: 2, category: "toy", name: "삐리삐리 로봇", desc: "반짝이는 눈을 가진 장난감 로봇", icon: "robot" },
+    { id: "stk_hat", stage: 2, category: "toy", name: "멋쟁이 밀짚모자", desc: "햇살 좋은 날 머리에 쓰는 노란 모자", icon: "hat" },
+    { id: "stk_banana", stage: 2, category: "food", name: "웃음꽃 바나나", desc: "달콤하고 부드러운 노란 바나나", icon: "banana" },
+    { id: "stk_lion", stage: 2, category: "animal", name: "멋쟁이 사자왕", desc: "황금빛 갈기가 멋진 용감한 사자!", icon: "lion" },
+    { id: "stk_duck", stage: 2, category: "animal", name: "꽥꽥 노란오리", desc: "연못 위를 둥실둥실 헤엄치는 오리", icon: "duck" },
+    { id: "stk_car", stage: 2, category: "vehicle", name: "붕붕 파란차", desc: "어디든 쌩쌩 달리는 귀여운 자동차", icon: "car" },
+    { id: "stk_cheese", stage: 2, category: "food", name: "구멍 뽕뽕 치즈", desc: "고소하고 부드러운 노란 삼각 치즈", icon: "cheese" },
+    { id: "stk_elephant", stage: 2, category: "animal", name: "뿌우 아기코끼리", desc: "긴 코로 분수를 뿜는 다정한 코끼리", icon: "elephant" },
+    { id: "stk_stew", stage: 2, category: "food", name: "보글보글 찌개", desc: "따끈따끈 온 가족이 모여 먹는 맛있는 찌개", icon: "stew" },
+
+    // 3단계 · 글자 합체 (12종)
+    { id: "stk_squirrel", stage: 3, category: "animal", name: "폴짝 다람쥐", desc: "복슬복슬 꼬리를 흔드는 숲속 다람쥐", icon: "squirrel" },
+    { id: "stk_radio", stage: 3, category: "toy", name: "랄랄라 라디오", desc: "신나는 동요가 흘러나오는 파란 라디오", icon: "radio" },
+    { id: "stk_camera", stage: 3, category: "toy", name: "찰칵 카메라", desc: "예쁜 미소를 찰칵 담아주는 카메라", icon: "camera" },
+    { id: "stk_ostrich", stage: 3, category: "animal", name: "롱다리 타조", desc: "초원을 바람처럼 빠르게 달리는 타조", icon: "ostrich" },
+    { id: "stk_wave", stage: 3, category: "nature", name: "철썩철썩 파도", desc: "시원한 바다에서 춤추듯 밀려오는 파도", icon: "wave" },
+    { id: "stk_raccoon", stage: 3, category: "animal", name: "안경 쓴 너구리", desc: "동글동글 눈매가 귀여운 장난꾸러기 너구리", icon: "raccoon" },
+    { id: "stk_bus", stage: 3, category: "vehicle", name: "부릉 노란버스", desc: "친구들을 태우고 유치원으로 달리는 버스", icon: "bus" },
+    { id: "stk_gem", stage: 3, category: "nature", name: "반짝이 보석", desc: "무지개빛으로 눈부시게 빛나는 파란 보석", icon: "gem" },
+    { id: "stk_tofu", stage: 3, category: "food", name: "말랑 하얀두부", desc: "입안에서 사르르 녹는 영양 만점 두부", icon: "tofu" },
+    { id: "stk_owl", stage: 3, category: "animal", name: "척척박사 부엉이", desc: "밤하늘 아래 동그란 눈을 반짝이는 부엉이", icon: "owl" },
+    { id: "stk_kiwi", stage: 3, category: "food", name: "새콤 초록키위", desc: "초록 보석처럼 상큼하고 달콤한 키위", icon: "kiwi" },
+    { id: "stk_frog", stage: 3, category: "animal", name: "개굴 초록개구리", desc: "연못 위에서 폴짝폴짝 높이 뛰는 개구리", icon: "frog" },
+
+    // 4단계 · 쉬운 낱말 (12종)
+    { id: "stk_rabbit", stage: 4, category: "animal", name: "깡충 분홍토끼", desc: "귀가 쫑긋! 당근을 좋아하는 토끼 친구", icon: "rabbit" },
+    { id: "stk_train", stage: 4, category: "vehicle", name: "칙칙폭폭 기차", desc: "한글 나라로 신나게 달리는 빨간 기차", icon: "train" },
+    { id: "stk_hippo", stage: 4, category: "animal", name: "하품쟁이 하마", desc: "입을 크게 벌리는 귀염둥이 하마", icon: "hippo" },
+    { id: "stk_apple", stage: 4, category: "food", name: "발그레 사과", desc: "햇살을 먹고 빨갛게 익은 달콤 사과", icon: "apple" },
+    { id: "stk_grape", stage: 4, category: "food", name: "탱글탱글 포도", desc: "알알이 모여 있는 보라색 포도송이", icon: "grape" },
+    { id: "stk_whale", stage: 4, category: "animal", name: "푸른 바다 고래", desc: "분수를 뿜으며 헤엄치는 파란 고래", icon: "whale" },
+    { id: "stk_rainbow", stage: 4, category: "nature", name: "일곱빛깔 무지개", desc: "하늘에 활짝 걸린 희망찬 무지개", icon: "rainbow" },
+    { id: "stk_pig", stage: 4, category: "animal", name: "꿀꿀 아기돼지", desc: "분홍 코를 실룩실룩 움직이는 귀여운 돼지", icon: "pig" },
+    { id: "stk_pizza", stage: 4, category: "food", name: "치즈 쭈욱 피자", desc: "고소한 치즈와 토핑이 듬뿍 올라간 피자", icon: "pizza" },
+    { id: "stk_ship", stage: 4, category: "vehicle", name: "둥실 돛단배", desc: "파도를 가르며 바다를 여행하는 멋진 배", icon: "ship" },
+    { id: "stk_piano", stage: 4, category: "toy", name: "딩동댕 피아노", desc: "건반을 누르면 아름다운 멜로디가 울려요", icon: "piano" },
+    { id: "stk_earth", stage: 4, category: "nature", name: "푸른 별 지구", desc: "우리가 사이좋게 살아가는 아름다운 지구", icon: "earth" },
+
+    // 5단계 · 받침 낱말 (12종)
+    { id: "stk_star", stage: 5, category: "nature", name: "반짝이 아기별", desc: "밤하늘에서 윙크하는 노란 아기별", icon: "star" },
+    { id: "stk_moon", stage: 5, category: "nature", name: "새근새근 달님", desc: "예쁜 꿈을 선물해 주는 초승달", icon: "moon" },
+    { id: "stk_snow", stage: 5, category: "nature", name: "방긋 눈사람", desc: "빨간 목도리를 두른 겨울 눈사람", icon: "snow" },
+    { id: "stk_watermelon", stage: 5, category: "food", name: "시원한 수박", desc: "여름날 제일 맛있는 빨간 수박 조각", icon: "watermelon" },
+    { id: "stk_tiger", stage: 5, category: "animal", name: "용감한 호랑이", desc: "어흥! 줄무늬가 멋진 아기 호랑이", icon: "tiger" },
+    { id: "stk_penguin", stage: 5, category: "animal", name: "뒤뚱뒤뚱 펭귄", desc: "얼음 위를 신나게 미끄러지는 펭귄", icon: "penguin" },
+    { id: "stk_dinosaur", stage: 5, category: "animal", name: "쿵쾅 아기공룡", desc: "초록빛 몸집이 귀여운 아기 공룡", icon: "dinosaur" },
+    { id: "stk_giraffe", stage: 5, category: "animal", name: "키다리 기린", desc: "구름까지 닿을 듯 목이 긴 기린 친구", icon: "giraffe" },
+    { id: "stk_cat", stage: 5, category: "animal", name: "야옹 아기고양이", desc: "보들보들 귀여운 노란 고양이", icon: "cat" },
+    { id: "stk_dog", stage: 5, category: "animal", name: "멍멍 강아지", desc: "꼬리를 살랑살랑 흔드는 강아지", icon: "dog" },
+    { id: "stk_strawberry", stage: 5, category: "food", name: "새콤달콤 딸기", desc: "향이 솔솔 나는 빨간 딸기", icon: "strawberry" },
+    { id: "stk_gift", stage: 5, category: "toy", name: "깜짝 선물상자", desc: "보리가 마음을 담아 준비한 리본 선물상자", icon: "gift" }
   ];
 
   var CHOSUNG_LIST = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
@@ -519,7 +563,8 @@ window.HG = window.HG || {};
     return copy;
   }
 
-  function drawNextItem(stageNum, gameKey = "default") {
+  function drawNextItem(stageNum, gameKey) {
+    if (gameKey === void 0) gameKey = "default";
     var pool = getStageItems(stageNum);
     var key = ((stageNum) + "_" + (gameKey));
 

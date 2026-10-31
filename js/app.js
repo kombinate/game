@@ -20,19 +20,21 @@ window.HG = window.HG || {};
     currentStage: 1,
     volume: 85,
     speechRate: 0.92,
-    preferredVoiceURI: "",
+    preferredVoiceURI: "warm_teacher",
     roundStars: 0,       // 0 ~ 5 (5개 채우면 스티커 보상)
     totalSolved: 0,
     unlockedStickers: ["stk_bear"], // 기본 환영 스티커 1장 지급
+    stickerLevels: { stk_bear: 1 }, // 다회차 수집 시 레벨업(★2, ★3...) 지원
     restTimerEnabled: true,
     bgmEnabled: true,
-    bgmVolume: 100,
-    bgmVolumeCustom: false
+    bgmVolume: 70,
+    bgmVolumeCustomV2: false
   };
 
   var state = loadState();
   var activeGameKey = null;
   var rewardAutoTimer = null;
+  var activeStickerFilter = "all";
 
   // 15분 쉬는 시간 타이머 상태
   var restRemainingSec = REST_LIMIT_SECONDS;
@@ -48,10 +50,18 @@ window.HG = window.HG || {};
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return Object.assign({}, defaultState);
       var parsed = JSON.parse(raw);
-      if (!parsed.bgmVolumeCustom) {
-        parsed.bgmVolume = 100;
+      if (!parsed.bgmVolumeCustomV2) {
+        parsed.bgmVolume = 70;
       }
-      return Object.assign({}, defaultState, parsed, { unlockedStickers: Array.isArray(parsed.unlockedStickers) ? parsed.unlockedStickers : ["stk_bear"] });
+      var unlocked = Array.isArray(parsed.unlockedStickers) ? parsed.unlockedStickers : ["stk_bear"];
+      var levels = (parsed.stickerLevels && typeof parsed.stickerLevels === "object") ? parsed.stickerLevels : {};
+      unlocked.forEach(function (id) {
+        if (!levels[id]) levels[id] = 1;
+      });
+      return Object.assign({}, defaultState, parsed, {
+        unlockedStickers: unlocked,
+        stickerLevels: levels
+      });
     } catch (e) {
       return Object.assign({}, defaultState);
     }
@@ -70,19 +80,23 @@ window.HG = window.HG || {};
     // 오디오 볼륨/속도/선호 목소리/배경음악 초기 반영
     HG.Audio.setVolume(state.volume / 100);
     HG.Audio.setSpeechRate(state.speechRate);
-    if (state.preferredVoiceURI) {
-      HG.Audio.setPreferredVoice(state.preferredVoiceURI);
-    }
+    HG.Audio.setPreferredVoice(state.preferredVoiceURI || "warm_teacher");
+    state.preferredVoiceURI = HG.Audio.getPreferredVoice();
+
     if (HG.Audio.setBgmVolume) {
-      var initBgmVol = typeof state.bgmVolume === "number" ? state.bgmVolume : 100;
+      var initBgmVol = typeof state.bgmVolume === "number" ? state.bgmVolume : 70;
       HG.Audio.setBgmVolume(initBgmVol / 100);
     }
     if (HG.Audio.setBgmEnabled) {
       HG.Audio.setBgmEnabled(state.bgmEnabled !== false);
     }
+    if (state.bgmEnabled !== false && HG.Audio.startBgm) {
+      HG.Audio.startBgm();
+    }
 
     bindTopBarEvents();
     bindHomeEvents();
+    bindStickerbookEvents();
     bindRewardModalEvents();
     bindParentModalEvents();
     bindRestOverlayEvents();
@@ -450,19 +464,43 @@ window.HG = window.HG || {};
   }
 
   /**
-   * 5문제 완료 보상 연출 (5~8초 축하 팡파레 + 꽃가루 + 움직이는 스티커 획득)
+   * 5문제 완료 보상 연출 (현재 학습 단계의 미획득 스티커 우선 지급 + 60종 모두 수집 시 ★레벨업!)
    */
   function triggerStickerReward() {
     var catalog = HG.Words.STICKER_CATALOG;
-    var lockedList = catalog.filter(function (s) { return !state.unlockedStickers.includes(s.id); });
-    var chosenSticker =
-      lockedList.length > 0
-        ? lockedList[Math.floor(Math.random() * lockedList.length)]
-        : catalog[Math.floor(Math.random() * catalog.length)];
+    var stageLocked = catalog.filter(function (s) {
+      return s.stage === state.currentStage && !state.unlockedStickers.includes(s.id);
+    });
+    var anyLocked = catalog.filter(function (s) {
+      return !state.unlockedStickers.includes(s.id);
+    });
+    var stagePool = catalog.filter(function (s) {
+      return s.stage === state.currentStage;
+    });
 
+    var chosenSticker;
+    var isLevelUp = false;
+
+    if (stageLocked.length > 0) {
+      chosenSticker = stageLocked[Math.floor(Math.random() * stageLocked.length)];
+    } else if (anyLocked.length > 0) {
+      chosenSticker = anyLocked[Math.floor(Math.random() * anyLocked.length)];
+    } else {
+      var targetPool = stagePool.length > 0 ? stagePool : catalog;
+      chosenSticker = targetPool[Math.floor(Math.random() * targetPool.length)];
+      isLevelUp = true;
+    }
+
+    if (!state.stickerLevels) state.stickerLevels = {};
     if (!state.unlockedStickers.includes(chosenSticker.id)) {
       state.unlockedStickers.push(chosenSticker.id);
+      state.stickerLevels[chosenSticker.id] = 1;
+    } else {
+      state.stickerLevels[chosenSticker.id] = (state.stickerLevels[chosenSticker.id] || 1) + 1;
+      isLevelUp = true;
     }
+
+    var newLevel = state.stickerLevels[chosenSticker.id] || 1;
 
     state.roundStars = 0;
     saveState();
@@ -478,7 +516,9 @@ window.HG = window.HG || {};
       showcase.innerHTML = HG.Words.getIllustSvg(chosenSticker.icon);
     }
     if (titleEl) {
-      titleEl.textContent = ("🎉 [" + (chosenSticker.name) + "] 스티커 획득!");
+      titleEl.textContent = isLevelUp
+        ? ("🌟 [" + chosenSticker.name + "] ★" + newLevel + " 레벨업!")
+        : ("🎉 " + (chosenSticker.stage || state.currentStage) + "단계 [" + chosenSticker.name + "] 스티커 획득!");
     }
     if (descEl) {
       descEl.textContent = chosenSticker.desc;
@@ -490,7 +530,11 @@ window.HG = window.HG || {};
 
     spawnConfettiPieces(42);
     HG.Audio.playFanfare();
-    HG.Character.reactHappy(("우와!! 별 5개를 모두 모아서 [" + (chosenSticker.name) + "] 스티커를 받았어! 🎉"));
+    if (HG.Character.interactWithSticker) {
+      HG.Character.interactWithSticker(chosenSticker);
+    } else {
+      HG.Character.reactHappy(("우와!! 별 5개를 모두 모아서 [" + (chosenSticker.name) + "] 스티커를 받았어! 🎉"));
+    }
 
     setTimeout(function () {
       HG.Audio.speak(("참 잘했어요! " + (chosenSticker.name) + " 스티커를 받았어요!"));
@@ -558,36 +602,93 @@ window.HG = window.HG || {};
     }
   }
 
+  function bindStickerbookEvents() {
+    var filterTabs = document.querySelectorAll("#sticker-stage-tabs .sticker-filter-tab");
+    filterTabs.forEach(function (tab) {
+      tab.addEventListener("click", function () {
+        HG.Audio.playTap();
+        activeStickerFilter = tab.getAttribute("data-filter") || "all";
+        renderStickerbook();
+      });
+    });
+  }
+
   /**
-   * [내 스티커북] 렌더링 및 터치 시 춤추는 인터랙션
+   * [내 스티커북] 단계별 필터(전체 / 1~5단계 총 60종) 렌더링 및 터치 시 아기곰 보리가 스티커를 들고 상호작용
    */
   function renderStickerbook() {
     var grid = document.getElementById("sticker-grid");
     if (!grid) return;
     grid.innerHTML = "";
 
-    HG.Words.STICKER_CATALOG.forEach(function (stk) {
+    var catalog = HG.Words.STICKER_CATALOG;
+    var totalUnlocked = state.unlockedStickers.length;
+    var summaryBadge = document.getElementById("stickerbook-progress-summary");
+    if (summaryBadge) {
+      summaryBadge.textContent = totalUnlocked + " / " + catalog.length + "장 수집";
+    }
+
+    var filterTabs = document.querySelectorAll("#sticker-stage-tabs .sticker-filter-tab");
+    filterTabs.forEach(function (tab) {
+      var f = tab.getAttribute("data-filter") || "all";
+      tab.classList.toggle("active", f === activeStickerFilter);
+      if (f === "all") {
+        tab.textContent = "전체 (" + totalUnlocked + "/" + catalog.length + ")";
+      } else {
+        var stgNum = Number(f);
+        var stgTotal = catalog.filter(function (s) { return s.stage === stgNum; }).length;
+        var stgUnlocked = catalog.filter(function (s) {
+          return s.stage === stgNum && state.unlockedStickers.includes(s.id);
+        }).length;
+        tab.textContent = stgNum + "단계 (" + stgUnlocked + "/" + stgTotal + ")";
+      }
+    });
+
+    var filteredList = activeStickerFilter === "all"
+      ? catalog
+      : catalog.filter(function (s) { return String(s.stage) === String(activeStickerFilter); });
+
+    filteredList.forEach(function (stk) {
       var isUnlocked = state.unlockedStickers.includes(stk.id);
+      var level = (state.stickerLevels && state.stickerLevels[stk.id]) ? state.stickerLevels[stk.id] : 1;
       var card = document.createElement("button");
       card.type = "button";
       card.className = ("sticker-card-item " + (isUnlocked ? "unlocked" : "locked"));
 
+      var stageTagHtml = "<span class=\"sticker-stage-tag\">" + (stk.stage || 1) + "단계</span>";
+      var levelTagHtml = (isUnlocked && level > 1)
+        ? ("<span class=\"sticker-level-badge\">★" + level + "</span>")
+        : "";
+
       if (isUnlocked) {
-        card.innerHTML = ("\n          <div class=\"sticker-svg-box\">" + (HG.Words.getIllustSvg(stk.icon)) + "</div>\n          <div class=\"sticker-name\">" + (stk.name) + "</div>\n        ");
+        card.innerHTML = (
+          stageTagHtml +
+          levelTagHtml +
+          "<div class=\"sticker-svg-box\">" + (HG.Words.getIllustSvg(stk.icon)) + "</div>" +
+          "<div class=\"sticker-name\">" + (stk.name) + "</div>"
+        );
         card.addEventListener("click", function () {
           HG.Audio.playCorrect();
-          HG.Audio.speak(((stk.name) + "! " + (stk.desc)));
-          HG.Character.reactHappy(((stk.name) + "! " + (stk.desc) + " 💃"));
+          if (HG.Character.interactWithSticker) {
+            HG.Character.interactWithSticker(stk);
+          } else {
+            HG.Audio.speak(((stk.name) + "! " + (stk.desc)));
+            HG.Character.reactHappy(((stk.name) + "! " + (stk.desc) + " 💃"));
+          }
 
           card.classList.remove("sticker-dancing");
           void card.offsetWidth;
           card.classList.add("sticker-dancing");
         });
       } else {
-        card.innerHTML = ("\n          <div class=\"sticker-svg-box\" style=\"display:flex;align-items:center;justify-content:center;font-size:36px;\">🔒</div>\n          <div class=\"sticker-name\">별 5개 모아 열기</div>\n        ");
+        card.innerHTML = (
+          stageTagHtml +
+          "<div class=\"sticker-svg-box\" style=\"display:flex;align-items:center;justify-content:center;font-size:32px;\">🔒</div>" +
+          "<div class=\"sticker-name\">" + (stk.stage || 1) + "단계 별 5개</div>"
+        );
         card.addEventListener("click", function () {
           HG.Audio.playTap();
-          HG.Character.say("별을 5개 모으면 이 비밀 스티커 친구도 만날 수 있어! 🎁");
+          HG.Character.say((stk.stage || 1) + "단계 놀이에서 별 5개를 모으면 이 비밀 스티커 친구를 만날 수 있어! 🎁", true);
         });
       }
 
@@ -614,23 +715,17 @@ window.HG = window.HG || {};
 
   function populateVoiceSelectUI() {
     var selectVoice = document.getElementById("select-parent-voice");
-    if (!selectVoice || !HG.Audio.getKoreanVoices) return;
+    if (!selectVoice || !HG.Audio.getVoiceOptions) return;
 
-    var voices = HG.Audio.getKoreanVoices();
-    selectVoice.innerHTML = ("<option value=\"\">자동 추천 (상냥한 여선생님 목소리)</option>");
-    voices.forEach(function (v) {
+    var options = HG.Audio.getVoiceOptions();
+    selectVoice.innerHTML = "";
+    options.forEach(function (optData) {
       var opt = document.createElement("option");
-      opt.value = v.voiceURI;
-      var badge =
-        v.name.toLowerCase().includes("natural") ||
-        v.name.toLowerCase().includes("google") ||
-        v.name.toLowerCase().includes("premium")
-          ? " ★고품질"
-          : "";
-      opt.textContent = ((v.name) + (badge));
+      opt.value = optData.id;
+      opt.textContent = optData.label;
       selectVoice.appendChild(opt);
     });
-    selectVoice.value = state.preferredVoiceURI || "";
+    selectVoice.value = HG.Audio.getPreferredVoice ? HG.Audio.getPreferredVoice() : (state.preferredVoiceURI || "warm_teacher");
   }
 
   function bindParentModalEvents() {
@@ -683,12 +778,12 @@ window.HG = window.HG || {};
     }
 
     if (inputBgmVol && labelBgmVol) {
-      var curBgmVol = typeof state.bgmVolume === "number" ? state.bgmVolume : 100;
+      var curBgmVol = typeof state.bgmVolume === "number" ? state.bgmVolume : 70;
       inputBgmVol.value = String(curBgmVol);
       labelBgmVol.textContent = (curBgmVol + "%");
       inputBgmVol.addEventListener("input", function () {
         state.bgmVolume = Number(inputBgmVol.value);
-        state.bgmVolumeCustom = true;
+        state.bgmVolumeCustomV2 = true;
         labelBgmVol.textContent = (state.bgmVolume + "%");
         if (HG.Audio.setBgmVolume) {
           HG.Audio.setBgmVolume(state.bgmVolume / 100);
@@ -779,6 +874,7 @@ window.HG = window.HG || {};
         state.roundStars = 0;
         state.totalSolved = 0;
         state.unlockedStickers = ["stk_bear"];
+        state.stickerLevels = { stk_bear: 1 };
         saveState();
         syncStarProgressUI();
         syncStickerBadgeUI();

@@ -28,15 +28,94 @@ window.HG = window.HG || {};
     "조금만 더 살펴볼까? 우리 친구는 할 수 있어! 🌱"
   ];
 
-  var PET_LINES = [
-    "헤헤, 간지러워요! 나랑 한글 놀이 해서 정말 좋아! 🐻",
-    "보리 쓰다듬어 줘서 고마워! 오늘도 신나게 놀자! 💛",
-    "별 5개를 모으면 움직이는 스티커 선물을 줄게! 🎁"
+  // 아기곰 보리를 터치했을 때 순서대로/다양하게 보여주는 8가지 상호작용 모션
+  var BORI_INTERACTIONS = [
+    {
+      state: "state-dance",
+      effect: "🎵💃✨",
+      eyes: "happy",
+      mouth: "M88 104 Q100 120 112 104 Z",
+      line: "얏호! 보리랑 같이 신나게 덩실덩실 춤춰 볼까? 💃",
+      sound: "correct"
+    },
+    {
+      state: "state-jump",
+      effect: "🌟🙌🌟",
+      eyes: "star",
+      mouth: "M88 103 Q100 122 112 103 Z",
+      line: "우와아! 하늘 높이 폴짝폴짝 점프! 우리 친구 최고야! 🌟",
+      sound: "fanfare"
+    },
+    {
+      state: "state-spin",
+      effect: "🌀✨🎈",
+      eyes: "wink",
+      mouth: "M90 105 Q100 118 110 105",
+      line: "돌아라 돌아 빙글빙글~! 한 바퀴 돌았더니 신난다! 🌀",
+      sound: "sparkle"
+    },
+    {
+      state: "state-love",
+      effect: "💖💕💗",
+      eyes: "heart",
+      mouth: "M90 105 Q100 117 110 105",
+      line: "헤헤, 보리를 쓰다듬어 주니까 하트가 뿅뿅 솟아나요! 💕",
+      sound: "correct"
+    },
+    {
+      state: "state-tickle",
+      effect: "😆🎶💛",
+      eyes: "laugh",
+      mouth: "M86 104 Q100 122 114 104 Z",
+      line: "까르르르! 간지러워요! 보리 배꼽이 도망가겠어! 😆",
+      sound: "pop"
+    },
+    {
+      state: "state-peekaboo",
+      effect: "🙈✨🎉",
+      eyes: "wide",
+      mouth: "M94 104 A6 6 0 1 0 106 104 A6 6 0 1 0 94 104 Z",
+      line: "까꿍!! 호호호, 보리가 어디 숨었었게? 깜짝 놀랐지! 🙈",
+      sound: "tap"
+    },
+    {
+      state: "state-hero",
+      effect: "💪🔥⭐",
+      eyes: "star",
+      mouth: "M88 105 Q100 119 112 105 Z",
+      line: "으라차차! 한글 공부를 열심히 했더니 힘이 불끈 솟아올라! 💪",
+      sound: "fanfare"
+    },
+    {
+      state: "state-eat",
+      effect: "🍯🍎😋",
+      eyes: "happy",
+      mouth: "M90 104 Q100 120 110 104 Z",
+      line: "냠냠 쩝쩝! 달콤한 꿀단지 간식을 먹었더니 기분이 최고야! 🍯",
+      sound: "pop"
+    }
+  ];
+
+  var ALL_STATE_CLASSES = [
+    "state-idle",
+    "state-dance",
+    "state-encourage",
+    "state-jump",
+    "state-spin",
+    "state-love",
+    "state-tickle",
+    "state-peekaboo",
+    "state-hero",
+    "state-eat",
+    "state-zoom"
   ];
 
   var mascotStageEl = null;
   var speechTextEl = null;
+  var propSlotEl = null;
+  var effectSlotEl = null;
   var stateTimer = null;
+  var interactionIndex = 0;
 
   function buildMascotSvg(mode) {
     if (mode === void 0) mode = "main";
@@ -49,17 +128,94 @@ window.HG = window.HG || {};
     var restSlotEl = document.getElementById("rest-character-slot");
 
     if (mascotStageEl) {
-      mascotStageEl.innerHTML = buildMascotSvg("main");
+      mascotStageEl.innerHTML = (
+        "<div class=\"mascot-wrap-inner\" style=\"position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;\">" +
+          buildMascotSvg("main") +
+          "<div id=\"mascot-effect-slot\" class=\"mascot-effect-slot hidden\" aria-hidden=\"true\"></div>" +
+          "<div id=\"mascot-prop-slot\" class=\"mascot-prop-slot hidden\" aria-hidden=\"true\"></div>" +
+        "</div>"
+      );
+      propSlotEl = document.getElementById("mascot-prop-slot");
+      effectSlotEl = document.getElementById("mascot-effect-slot");
+
       mascotStageEl.addEventListener("click", function () {
-        HG.Audio.playTap();
-        var line = PET_LINES[Math.floor(Math.random() * PET_LINES.length)];
-        reactHappy(line, false);
+        triggerRandomPetInteraction();
       });
     }
 
     if (restSlotEl) {
       restSlotEl.innerHTML = ("<div style=\"width:100px;height:110px;margin:0 auto;\">" + (buildMascotSvg("rest")) + "</div>");
     }
+  }
+
+  function getEyeSvgByType(eyeType) {
+    if (eyeType === "happy") {
+      return (
+        "<path d=\"M68 88 Q76 78 84 88\" stroke=\"url(#bDark-main)\" stroke-width=\"4.5\" fill=\"none\" stroke-linecap=\"round\" />" +
+        "<path d=\"M116 88 Q124 78 132 88\" stroke=\"url(#bDark-main)\" stroke-width=\"4.5\" fill=\"none\" stroke-linecap=\"round\" />"
+      );
+    }
+    if (eyeType === "wink") {
+      return (
+        "<path d=\"M68 86 Q76 77 84 86\" stroke=\"url(#bDark-main)\" stroke-width=\"4.5\" fill=\"none\" stroke-linecap=\"round\" />" +
+        "<circle cx=\"124\" cy=\"86\" r=\"6.5\" fill=\"url(#bDark-main)\" />" +
+        "<circle cx=\"122\" cy=\"84\" r=\"2.2\" fill=\"url(#bWhite-main)\" />"
+      );
+    }
+    if (eyeType === "laugh") {
+      return (
+        "<path d=\"M68 81 L82 86 L68 91\" stroke=\"url(#bDark-main)\" stroke-width=\"4.2\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\" />" +
+        "<path d=\"M132 81 L118 86 L132 91\" stroke=\"url(#bDark-main)\" stroke-width=\"4.2\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\" />"
+      );
+    }
+    if (eyeType === "star") {
+      return (
+        "<polygon points=\"76,77 78.5,83 85,83.5 80,87.5 81.5,94 76,90.5 70.5,94 72,87.5 67,83.5 73.5,83\" fill=\"url(#bBtn-main)\" stroke=\"url(#bLine-main)\" stroke-width=\"1.8\" />" +
+        "<polygon points=\"124,77 126.5,83 133,83.5 128,87.5 129.5,94 124,90.5 118.5,94 120,87.5 115,83.5 121.5,83\" fill=\"url(#bBtn-main)\" stroke=\"url(#bLine-main)\" stroke-width=\"1.8\" />"
+      );
+    }
+    if (eyeType === "heart") {
+      return (
+        "<path d=\"M76 93 C76 93 66 86 66 80 C66 76 71 75 76 80 C81 75 86 76 86 80 C86 86 76 93 76 93 Z\" fill=\"url(#bCheek-main)\" />" +
+        "<path d=\"M124 93 C124 93 114 86 114 80 C114 76 119 75 124 80 C129 75 134 76 134 80 C134 86 124 93 124 93 Z\" fill=\"url(#bCheek-main)\" />"
+      );
+    }
+    if (eyeType === "wide") {
+      return (
+        "<circle cx=\"76\" cy=\"85\" r=\"8\" fill=\"url(#bDark-main)\" />" +
+        "<circle cx=\"73\" cy=\"82\" r=\"3\" fill=\"url(#bWhite-main)\" />" +
+        "<circle cx=\"124\" cy=\"85\" r=\"8\" fill=\"url(#bDark-main)\" />" +
+        "<circle cx=\"121\" cy=\"82\" r=\"3\" fill=\"url(#bWhite-main)\" />"
+      );
+    }
+    return (
+      "<circle cx=\"76\" cy=\"86\" r=\"6.5\" fill=\"url(#bDark-main)\" />" +
+      "<circle cx=\"74\" cy=\"84\" r=\"2.2\" fill=\"url(#bWhite-main)\" />" +
+      "<circle cx=\"124\" cy=\"86\" r=\"6.5\" fill=\"url(#bDark-main)\" />" +
+      "<circle cx=\"122\" cy=\"84\" r=\"2.2\" fill=\"url(#bWhite-main)\" />"
+    );
+  }
+
+  function showEffectBadge(effectText) {
+    if (!effectSlotEl) return;
+    if (!effectText) {
+      effectSlotEl.classList.add("hidden");
+      effectSlotEl.textContent = "";
+      return;
+    }
+    effectSlotEl.textContent = effectText;
+    effectSlotEl.classList.remove("hidden");
+  }
+
+  function showPropBadge(svgHtml, propModeClass) {
+    if (!propSlotEl) return;
+    if (!svgHtml) {
+      propSlotEl.className = "mascot-prop-slot hidden";
+      propSlotEl.innerHTML = "";
+      return;
+    }
+    propSlotEl.className = "mascot-prop-slot " + (propModeClass || "prop-bounce");
+    propSlotEl.innerHTML = svgHtml;
   }
 
   function setMood(stateClass, mouthPath, eyeHtml) {
@@ -69,7 +225,11 @@ window.HG = window.HG || {};
     var eyes = document.getElementById("mascot-eyes-main");
 
     if (svg) {
-      svg.classList.remove("state-idle", "state-dance", "state-encourage");
+      for (var i = 0; i < ALL_STATE_CLASSES.length; i++) {
+        svg.classList.remove(ALL_STATE_CLASSES[i]);
+      }
+      // 연속 클릭 시에도 애니메이션이 즉시 재시작되도록 강제 리플로우
+      void svg.offsetWidth;
       svg.classList.add(stateClass);
     }
     if (mouth && mouthPath) {
@@ -81,11 +241,97 @@ window.HG = window.HG || {};
   }
 
   function resetToIdle() {
+    showEffectBadge("");
+    showPropBadge("");
     setMood(
       "state-idle",
       "M90 106 Q100 116 110 106",
-      ("\n        <circle cx=\"76\" cy=\"86\" r=\"6.5\" fill=\"url(#bDark-main)\" />\n        <circle cx=\"74\" cy=\"84\" r=\"2.2\" fill=\"url(#bWhite-main)\" />\n        <circle cx=\"124\" cy=\"86\" r=\"6.5\" fill=\"url(#bDark-main)\" />\n        <circle cx=\"122\" cy=\"84\" r=\"2.2\" fill=\"url(#bWhite-main)\" />\n      ")
+      getEyeSvgByType("normal")
     );
+  }
+
+  /**
+   * 아기곰 보리를 터치했을 때 8가지 다양한 모션과 사운드·음성 반응 실행
+   */
+  function triggerRandomPetInteraction() {
+    if (stateTimer) clearTimeout(stateTimer);
+    var act = BORI_INTERACTIONS[interactionIndex % BORI_INTERACTIONS.length];
+    interactionIndex += 1;
+
+    if (act.sound === "fanfare" && HG.Audio.playFanfare) {
+      HG.Audio.playFanfare();
+    } else if (act.sound === "correct" && HG.Audio.playCorrect) {
+      HG.Audio.playCorrect();
+    } else if (act.sound === "pop" && HG.Audio.playPop) {
+      HG.Audio.playPop();
+    } else if (act.sound === "sparkle" && HG.Audio.playSparkle) {
+      HG.Audio.playSparkle(interactionIndex);
+    } else if (HG.Audio.playTap) {
+      HG.Audio.playTap();
+    }
+
+    showPropBadge("");
+    showEffectBadge(act.effect);
+    setMood(act.state, act.mouth, getEyeSvgByType(act.eyes));
+    say(act.line, true);
+
+    stateTimer = setTimeout(resetToIdle, 3000);
+  }
+
+  /**
+   * 스티커북에서 스티커를 클릭했을 때 보리가 해당 스티커를 직접 들고/타고/먹으며 상호작용!
+   */
+  function interactWithSticker(stk) {
+    if (!stk) return;
+    if (stateTimer) clearTimeout(stateTimer);
+
+    var svgHtml = HG.Words && HG.Words.getIllustSvg ? HG.Words.getIllustSvg(stk.icon) : "";
+    var category = stk.category || "toy";
+    var stateClass = "state-dance";
+    var eyeType = "happy";
+    var mouthPath = "M88 104 Q100 120 112 104 Z";
+    var propClass = "prop-bounce";
+    var effectText = "✨💖✨";
+    var line = stk.name + "! " + stk.desc;
+
+    if (category === "food") {
+      stateClass = "state-eat";
+      eyeType = "happy";
+      propClass = "prop-eat";
+      effectText = "😋🍴💛";
+      line = "와구와구 냠냠! [" + stk.name + "] 진짜 맛있겠다! 보리랑 같이 나눠 먹자! 😋";
+    } else if (category === "vehicle") {
+      stateClass = "state-zoom";
+      eyeType = "star";
+      propClass = "prop-zoom";
+      effectText = "💨🎶🌟";
+      line = "부릉부릉 쌩쌩! 보리가 [" + stk.name + "] 타고 한글 나라로 신나게 출발해요! 🚀";
+    } else if (category === "animal") {
+      stateClass = "state-jump";
+      eyeType = "laugh";
+      propClass = "prop-friend";
+      effectText = "🐾🎵💕";
+      line = "안녕 [" + stk.name + "]야! 보리랑 손잡고 폴짝폴짝 신나게 춤추자! 🐾";
+    } else if (category === "nature") {
+      stateClass = "state-spin";
+      eyeType = "heart";
+      propClass = "prop-float";
+      effectText = "🌈✨💫";
+      line = "우와아! 반짝반짝 아름다운 [" + stk.name + "] 스티커야! 보리가 소중히 안아줄게! ✨";
+    } else {
+      stateClass = "state-hero";
+      eyeType = "wink";
+      propClass = "prop-bounce";
+      effectText = "🎁🎉⭐";
+      line = "야호! 보리가 제일 좋아하는 [" + stk.name + "] 보물 스티커야! 정말 멋지다! 🎁";
+    }
+
+    showEffectBadge(effectText);
+    showPropBadge(svgHtml, propClass);
+    setMood(stateClass, mouthPath, getEyeSvgByType(eyeType));
+    say(line, true);
+
+    stateTimer = setTimeout(resetToIdle, 3600);
   }
 
   function say(message, speakAloud) {
@@ -141,6 +387,8 @@ window.HG = window.HG || {};
     say: say,
     reactHappy: reactHappy,
     reactEncourage: reactEncourage,
+    interactWithSticker: interactWithSticker,
+    triggerRandomPetInteraction: triggerRandomPetInteraction,
     resetToIdle: resetToIdle
   };
 })(window.HG);

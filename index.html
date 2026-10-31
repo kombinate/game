@@ -199,8 +199,16 @@
           <!-- 3. 내 스티커북 화면 -->
           <div id="screen-stickerbook" class="screen">
             <div class="stickerbook-header">
-              <h2>🌟 보리의 반짝반짝 스티커북</h2>
-              <p>스티커를 손가락으로 콕! 누르면 신나게 춤을 춰요!</p>
+              <h2>🌟 보리의 반짝반짝 스티커북 <span id="stickerbook-progress-summary" class="stickerbook-summary-badge">1 / 60</span></h2>
+              <p>스티커를 콕! 누르면 아기곰 보리가 스티커를 들고 신나게 놀아요!</p>
+            </div>
+            <div id="sticker-stage-tabs" class="sticker-stage-tabs" role="tablist" aria-label="단계별 스티커 보기">
+              <button class="sticker-filter-tab active" data-filter="all" type="button">전체</button>
+              <button class="sticker-filter-tab" data-filter="1" type="button">1단계</button>
+              <button class="sticker-filter-tab" data-filter="2" type="button">2단계</button>
+              <button class="sticker-filter-tab" data-filter="3" type="button">3단계</button>
+              <button class="sticker-filter-tab" data-filter="4" type="button">4단계</button>
+              <button class="sticker-filter-tab" data-filter="5" type="button">5단계</button>
             </div>
             <div id="sticker-grid" class="sticker-grid"></div>
           </div>
@@ -258,8 +266,8 @@
 
             <div class="setting-row">
               <div class="setting-label">
-                <strong>잔잔한 동요 배경음악 (BGM)</strong>
-                <span>인기 동요 8곡 오르골 연주가 랜덤 재생됩니다.</span>
+                <strong>신나는 동요 게임 배경음악 (BGM)</strong>
+                <span>인기 동요 8곡 게임 사운드트랙이 랜덤 재생됩니다.</span>
               </div>
               <div class="timer-control-wrap">
                 <label class="toggle-switch">
@@ -274,22 +282,26 @@
             <div class="setting-row">
               <div class="setting-label">
                 <strong>동요 배경음악 (BGM) 크기</strong>
-                <span>동요 배경음악 소리의 크기를 따로 조절합니다.</span>
+                <span>동요 배경음악 소리의 크기를 따로 조절합니다 (기본 70%).</span>
               </div>
               <div class="volume-control-wrap">
-                <input id="input-bgm-volume" type="range" min="0" max="100" step="5" value="100" />
-                <span id="label-bgm-volume">100%</span>
+                <input id="input-bgm-volume" type="range" min="0" max="100" step="5" value="70" />
+                <span id="label-bgm-volume">70%</span>
               </div>
             </div>
 
             <div class="setting-row">
               <div class="setting-label">
-                <strong>선생님 목소리 선택 (TTS)</strong>
-                <span>가장 자연스러운 상냥한 여선생님 목소리를 우선 선택합니다.</span>
+                <strong>선생님·캐릭터 목소리 선택 (TTS)</strong>
+                <span>아이가 좋아하는 목소리 스타일을 직접 골라보세요.</span>
               </div>
               <div class="volume-control-wrap">
                 <select id="select-parent-voice" class="parent-select">
-                  <option value="">자동 (상냥한 여선생님 추천)</option>
+                  <option value="warm_teacher">👩‍🏫 다정한 유치원 선생님 (기본)</option>
+                  <option value="bright_sister">🎀 통통 튀는 발랄 선생님</option>
+                  <option value="cute_bori">🐻 귀여운 아기곰 보리 목소리</option>
+                  <option value="calm_story">📖 차분한 동화 구연 선생님</option>
+                  <option value="brave_uncle">🏃 씩씩한 체육 선생님</option>
                 </select>
                 <button id="btn-test-voice" class="btn-small-outline" type="button">🔊 목소리 듣기</button>
               </div>
